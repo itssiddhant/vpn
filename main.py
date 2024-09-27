@@ -3,6 +3,7 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivymd.app import MDApp
 from kivymd.theming import ThemableBehavior
 from kivymd.uix.menu import MDDropdownMenu
+from kivy.metrics import dp
 from kivy.core.window import Window
 from kivymd.uix.button import MDFlatButton
 from kivy.properties import BooleanProperty
@@ -14,10 +15,37 @@ class LoginScreen(Screen):
         instance_textfield.password = not instance_textfield.password
         instance_textfield.icon_right = 'eye' if instance_textfield.password else 'eye-off'
 
+    def on_touch_down(self, touch):
+        
+        password_field = self.ids.password
+        
+        if password_field.collide_point(*touch.pos):
+            icon_pos_right = password_field.x + password_field.width - dp(48)  
+            
+            if touch.x > icon_pos_right:
+                self.toggle_password_visibility(password_field)
+                return True
+        
+        return super(LoginScreen, self).on_touch_down(touch)
+
 class SignupScreen(Screen):
     def toggle_password_visibility(self, instance_textfield):
         instance_textfield.password = not instance_textfield.password
         instance_textfield.icon_right = 'eye' if instance_textfield.password else 'eye-off'
+
+    def on_touch_down(self, touch):
+        
+        password_field = self.ids.password
+        
+        if password_field.collide_point(*touch.pos):
+            icon_pos_right = password_field.x + password_field.width - dp(48)  
+            
+            if touch.x > icon_pos_right:
+                self.toggle_password_visibility(password_field)
+                return True
+        
+        return super(LoginScreen, self).on_touch_down(touch)
+
 
 class UsernameScreen(Screen):
     pass
@@ -28,6 +56,20 @@ class ForgotPasswordScreen(Screen):
     def toggle_password_visibility(self, instance_textfield):
         instance_textfield.password = not instance_textfield.password
         instance_textfield.icon_right = 'eye' if instance_textfield.password else 'eye-off'
+
+    def on_touch_down(self, touch):
+        
+        password_field = self.ids.password
+        
+        if password_field.collide_point(*touch.pos):
+            icon_pos_right = password_field.x + password_field.width - dp(48)  
+            
+            if touch.x > icon_pos_right:
+                self.toggle_password_visibility(password_field)
+                return True
+        
+        return super(LoginScreen, self).on_touch_down(touch)
+
 
 class BlankScreen(Screen):
     vpn_active = BooleanProperty(False)  # Track VPN status

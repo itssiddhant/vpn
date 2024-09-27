@@ -56,8 +56,6 @@
                 mode: "rectangle"
                 icon_right: 'eye-off'
                 line_color_normal: 0, 0.5, 0, 1  # Green color
-                on_touch_down:
-                    if self.collide_point(*args[1].pos): root.toggle_password_visibility(self)
             
             MDTextField:
                 id: confirm_password
@@ -68,8 +66,6 @@
                 mode: "rectangle"
                 icon_right: 'eye-off'
                 line_color_normal: 0, 0.5, 0, 1  # Green color
-                on_touch_down:
-                    if self.collide_point(*args[1].pos): root.toggle_password_visibility(self)
             
             MDRaisedButton:
                 text: 'SIGN UP'
