@@ -1,0 +1,72 @@
+<UsernameScreen>:
+    FloatLayout:
+        canvas.before:
+            Color:
+                rgba: 0.1, 0.1, 0.1, 1  # Dark grey background
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint: None, None
+            size: min(root.width - dp(40), dp(340)), self.minimum_height
+            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+            spacing: dp(20)
+            padding: dp(20)
+            
+            canvas.before:
+                Color:
+                    rgba: 0.2, 0.2, 0.2, 1  # Light grey for the box
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [15, 15, 15, 15]
+                Color:
+                    rgba: 0, 0.5, 0, 1  # Green color for border
+                Line:
+                    rounded_rectangle: (self.x, self.y, self.width, self.height, 15)
+                    width: 2  # Border width
+            
+            MDLabel:
+                text: 'Write the Username'
+                font_style: 'H4'
+                halign: 'center'
+                theme_text_color: "Custom"
+                text_color: 0, 0.5, 0, 1  # Green color
+                size_hint_y: None
+                height: self.texture_size[1]
+                padding_y: dp(15)
+
+            MDTextField:
+                id: username_input
+                hint_text: 'Username'
+                icon_right: 'account'
+                size_hint_x: 1
+                font_size: dp(18)
+                mode: "rectangle"
+                line_color_normal: 0, 0.5, 0, 1  # Green color
+
+            MDRaisedButton:
+                text: 'SUBMIT'
+                size_hint_x: 1
+                height: dp(50)
+                pos_hint: {'center_x': 0.5}
+                md_bg_color: 0, 0.5, 0, 1  # Green color
+                on_release: app.check_username(username_input.text)
+                on_release: app.change_screen('forgot_password')
+
+            MDLabel:
+                id: error_label
+                text: ""
+                theme_text_color: "Error"
+                halign: "center"
+                size_hint_y: None
+                height: self.texture_size[1]
+
+            MDFlatButton:
+                text: 'Go back to Login'
+                pos_hint: {'center_x': 0.5}
+                theme_text_color: "Custom"
+                text_color: 0, 0.5, 0, 1  # Green color
+                on_release: app.change_screen('login')

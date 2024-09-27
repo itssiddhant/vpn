@@ -1,0 +1,163 @@
+<BlankScreen>:
+    MDBoxLayout:
+        orientation: 'vertical'
+
+        MDBoxLayout:
+            orientation: 'vertical'
+            size_hint_y: 0.92
+
+            MDBottomNavigation:
+                panel_color: 0.2, 0.2, 0.2, 1  # Dark grey
+
+                MDBottomNavigationItem:
+                    name: 'home'
+                    text: 'Home'
+                    icon: 'home'
+
+                    MDFloatLayout:
+                        MDCard:
+                            size_hint: None, None
+                            size: root.width * 0.9, root.height * 0.7
+                            pos_hint: {'center_x': .5, 'center_y': .5}
+                            elevation: 4
+                            padding: 20
+                            spacing: 30
+                            orientation: 'vertical'
+                            md_bg_color: 0.3, 0.3, 0.3, 1  # Light grey
+
+                            MDLabel:
+                                text: 'VPN Control'
+                                halign: 'center'
+                                font_style: 'H5'
+                                size_hint_y: None
+                                height: self.texture_size[1]
+                                padding_y: 15
+                                theme_text_color: "Custom"
+                                text_color: 0, 0.5, 0, 1  # Green color
+
+                            MDBoxLayout:
+                                orientation: 'vertical'
+                                size_hint_y: None
+                                height: root.height * 0.4
+                                spacing: 20
+                                padding: [0, 10, 0, 10]
+
+                                MDRaisedButton:
+                                    id: country_dropdown
+                                    text: 'Select Country'
+                                    pos_hint: {'center_x': .5, 'center_y': .5}
+                                    on_release: app.show_country_menu(self)
+                                    size_hint: None, None
+                                    size: root.width * 0.15, root.width * 0.05
+                                    md_bg_color: 0, 0.5, 0, 1  # Green color
+                                    theme_text_color: "Custom"
+                                    text_color: 1, 1, 1, 1
+                                
+                                MDFloatingActionButton:
+                                    id: toggle_button
+                                    icon: 'power'
+                                    theme_icon_color: "Custom"
+                                    icon_color: 1, 1, 1, 1
+                                    md_bg_color: 0.5, 0, 0, 1  # Red color when OFF
+                                    pos_hint: {'center_x': .5, 'center_y': .5}
+                                    size_hint: None, None
+                                    size: root.width * 0.15, root.width * 0.15
+                                    on_release: root.toggle_vpn() 
+                                        
+
+                            MDLabel:
+                                id: vpn_status
+                                text: 'VPN is OFF'
+                                halign: 'center'
+                                theme_text_color: "Custom"
+                                text_color: 0.5, 0, 0, 1  # Red color when OFF
+                                font_style: 'H6'
+
+                            
+
+                MDBottomNavigationItem:
+                    name: 'profile'
+                    text: 'Profile'
+                    icon: 'account'
+
+                    FloatLayout:
+                        canvas.before:
+                            Color:
+                                rgba: 0.1, 0.1, 0.1, 1  # Dark grey background
+                            Rectangle:
+                                pos: self.pos
+                                size: self.size
+
+                        BoxLayout:
+                            orientation: 'vertical'
+                            size_hint: None, None
+                            size: min(root.width - dp(40), dp(340)), self.minimum_height
+                            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                            spacing: dp(20)
+                            padding: dp(20)
+
+                            canvas.before:
+                                Color:
+                                    rgba: 0.2, 0.2, 0.2, 1  # Light grey for the box
+                                RoundedRectangle:
+                                    pos: self.pos
+                                    size: self.size
+                                    radius: [15, 15, 15, 15]
+                                Color:
+                                    rgba: 0, 0.5, 0, 1  # Green color for border
+                                Line:
+                                    rounded_rectangle: (self.x, self.y, self.width, self.height, 15)
+                                    width: 2  # Border width
+
+                            MDLabel:
+                                text: 'Profile'
+                                font_style: 'H4'
+                                halign: 'center'
+                                theme_text_color: "Custom"
+                                text_color: 0, 0.5, 0, 1  # Green color
+                                size_hint_y: None
+                                height: self.texture_size[1]
+                                padding_y: dp(15)
+
+                            MDLabel:
+                                id: profile_username
+                                text: app.user_email  # Display the logged-in user's email or "Guest"
+                                halign: 'center'
+                                theme_text_color: "Custom"
+                                text_color: 0, 0.5, 0, 1  # Green color
+                                font_style: 'H6'
+                                size_hint_y: None
+                                height: self.texture_size[1]
+                                
+                            MDTextField:
+                                id: organization_dropdown
+                                hint_text: 'Select Organization'
+                                icon_right: 'chevron-down'
+                                size_hint_x: 1
+                                font_size: dp(18)
+                                mode: "rectangle"
+                                line_color_normal: 0, 0.5, 0, 1  # Green color
+                                readonly: True
+                                on_focus: if self.focus: app.show_organization_menu(self)
+
+                            MDTextField:
+                                id: role_dropdown
+                                hint_text: 'Select Role'
+                                icon_right: 'chevron-down'
+                                size_hint_x: 1
+                                font_size: dp(18)
+                                mode: "rectangle"
+                                line_color_normal: 0, 0.5, 0, 1  # Green color
+                                readonly: True
+                                on_focus: if self.focus: app.show_role_menu(self)
+
+                            Widget:
+                                size_hint_y: None
+                                height: dp(30)  # Increased space before the apply button
+
+                            MDRaisedButton:
+                                text: 'APPLY'
+                                size_hint_x: 1
+                                height: dp(50)
+                                md_bg_color: 0, 0.5, 0, 1  # Green color
+                                on_release: app.apply_profile_changes()
