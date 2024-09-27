@@ -5,7 +5,7 @@ import random
 import smtplib
 import time
 from cryptography.fernet import Fernet
-from firebase_details.py import firebase_config
+from firebase_details import firebaseConfig
 
 firebase = pyrebase.initialize_app(firebaseConfig)
 auth = firebase.auth()
