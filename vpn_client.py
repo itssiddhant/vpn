@@ -5,17 +5,7 @@ import random
 import smtplib
 import time
 from cryptography.fernet import Fernet
-
-firebaseConfig = {
-   'apiKey': "AIzaSyCwYcw683QBshnXYDCfSCzhIpE6xah7BsE",
-  'authDomain': "vpn-major1.firebaseapp.com",
-    'databaseURL': "https://vpn-major1-default-rtdb.asia-southeast1.firebasedatabase.app/",
-    'projectId': "vpn-major1",
-  'storageBucket': "vpn-major1.appspot.com",
-  'messagingSenderId': "649752317837",
-  'appId': "1:649752317837:web:f41655718bab3196de77c4",
-  'measurementId': "G-C1Q38H2ME8"
-}
+from firebase_details.py import firebase_config
 
 firebase = pyrebase.initialize_app(firebaseConfig)
 auth = firebase.auth()
