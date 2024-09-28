@@ -34,17 +34,14 @@ class SignupScreen(Screen):
         instance_textfield.icon_right = 'eye' if instance_textfield.password else 'eye-off'
 
     def on_touch_down(self, touch):
-        
-        password_field = self.ids.password
-        
-        if password_field.collide_point(*touch.pos):
-            icon_pos_right = password_field.x + password_field.width - dp(48)  
-            
-            if touch.x > icon_pos_right:
-                self.toggle_password_visibility(password_field)
-                return True
-        
-        return super(LoginScreen, self).on_touch_down(touch)
+        for field_id in ['signup_password', 'confirm_password']:
+            password_field = self.ids[field_id]
+            if password_field.collide_point(*touch.pos):
+                icon_pos_right = password_field.x + password_field.width - dp(48)
+                if touch.x > icon_pos_right:
+                    self.toggle_password_visibility(password_field)
+                    return True
+        return super(SignupScreen, self).on_touch_down(touch)
 
 
 class UsernameScreen(Screen):
@@ -58,17 +55,14 @@ class ForgotPasswordScreen(Screen):
         instance_textfield.icon_right = 'eye' if instance_textfield.password else 'eye-off'
 
     def on_touch_down(self, touch):
-        
-        password_field = self.ids.password
-        
-        if password_field.collide_point(*touch.pos):
-            icon_pos_right = password_field.x + password_field.width - dp(48)  
-            
-            if touch.x > icon_pos_right:
-                self.toggle_password_visibility(password_field)
-                return True
-        
-        return super(LoginScreen, self).on_touch_down(touch)
+        for field_id in ['new_password', 'confirm_password']:
+            password_field = self.ids[field_id]
+            if password_field.collide_point(*touch.pos):
+                icon_pos_right = password_field.x + password_field.width - dp(48)
+                if touch.x > icon_pos_right:
+                    self.toggle_password_visibility(password_field)
+                    return True
+        return super(ForgotPasswordScreen, self).on_touch_down(touch)
 
 
 class BlankScreen(Screen):
@@ -113,6 +107,7 @@ class MyApp(MDApp):
         sm.add_widget(ForgotPasswordScreen(name='forgot_password'))
         sm.add_widget(BlankScreen(name='blank'))
         return sm
+    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.user_email = "Guest"
@@ -149,6 +144,10 @@ class MyApp(MDApp):
             print(f"Username entered: {username}")
 
     def signup(self, email, password, confirm_password):
+        if not email or not password or not confirm_password:
+            print("All fields are required.")
+            return
+        
         if password == confirm_password:
             try:
                 register_user(email, password)  # Register the user using register.py
@@ -158,6 +157,29 @@ class MyApp(MDApp):
                 print(f"Error during signup: {e}")
         else:
             print("Passwords do not match.")
+    
+    def show_signup_organization_menu(self, caller):
+        menu_items = [
+            {
+                "viewclass": "OneLineListItem",
+                "text": f"Organization {i}",
+                "on_release": lambda x=f"Organization {i}": self.set_signup_organization(x, caller),
+            } for i in range(1, 6)
+        ]
+        self.signup_organization_menu = MDDropdownMenu(
+            caller=caller,
+            items=menu_items,
+            width_mult=4,
+            max_height=Window.height * 0.5,
+            background_color=self.theme_cls.bg_dark,
+            radius=[15, 15, 15, 15],
+            elevation=4,
+        )
+        self.signup_organization_menu.open()
+
+    def set_signup_organization(self, organization_name, caller):
+        caller.text = organization_name
+        self.signup_organization_menu.dismiss()
             
     def change_screen(self, screen_name):
         self.root.current = screen_name

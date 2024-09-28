@@ -48,6 +48,17 @@
                 line_color_normal: 0, 0.5, 0, 1  # Green color
             
             MDTextField:
+                id: organization_dropdown
+                hint_text: 'Select Organization'
+                icon_right: 'chevron-down'
+                size_hint_x: 1
+                font_size: dp(18)
+                mode: "rectangle"
+                line_color_normal: 0, 0.5, 0, 1  # Green color
+                readonly: True
+                on_focus: if self.focus: app.show_signup_organization_menu(self)
+            
+            MDTextField:
                 id: signup_password
                 hint_text: 'Password'
                 size_hint_x: 1
@@ -73,7 +84,8 @@
                 height: dp(50)
                 pos_hint: {'center_x': 0.5}
                 md_bg_color: 0, 0.5, 0, 1  # Green color
-                on_release: app.signup(signup_username.text, signup_password.text, confirm_password.text)
+                on_release: 
+                    app.signup(signup_username.text, signup_password.text, confirm_password.text)
             
             MDFlatButton:
                 text: 'Already have an account? Login'
