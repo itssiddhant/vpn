@@ -4,8 +4,8 @@ import hashlib
 import random
 import smtplib
 import time
-from cryptography.fernet import Fernet
 from firebase_details import firebaseConfig
+from encdec import encrypt_message 
 
 firebase = pyrebase.initialize_app(firebaseConfig)
 auth = firebase.auth()
@@ -14,9 +14,6 @@ db = firebase.database()
 LOGIN_ATTEMPTS = {}
 MAX_ATTEMPTS = 5
 ATTEMPT_PERIOD = 60 
-
-key = 'TzsdHHMBorkGJau6p0S1MDX2MIWNN_7f90XQmLIIQVI='
-cipher_suite = Fernet(key)
 
 def rate_limited_login(email):
     """Rate limits login attempts."""
@@ -99,11 +96,6 @@ def verify_otp(email, otp):
     else:
         print("Invalid OTP")
         return False
-
-def encrypt_message(message):
-    """Encrypts the message before sending."""
-    encrypted_message = cipher_suite.encrypt(message.encode())
-    return encrypted_message
 
 def send_encrypted_message_to_server(encrypted_message):
     try:

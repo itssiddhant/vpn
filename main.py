@@ -9,6 +9,8 @@ from kivymd.uix.button import MDFlatButton
 from kivy.properties import BooleanProperty
 from vpn_client import login_user, send_otp, verify_otp, encrypt_message, send_encrypted_message_to_server
 from register import register_user
+from encdec import encrypt_message
+from vpn_client import send_encrypted_message_to_server
 
 class LoginScreen(Screen):
     def toggle_password_visibility(self, instance_textfield):
@@ -68,7 +70,6 @@ class ForgotPasswordScreen(Screen):
 class BlankScreen(Screen):
     vpn_active = BooleanProperty(False)  # Track VPN status
     
-
     def toggle_vpn(self):
         self.vpn_active = not self.vpn_active
         if self.vpn_active:
