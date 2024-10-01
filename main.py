@@ -118,12 +118,9 @@ class MyApp(MDApp):
         self.server_thread.start()
         print("Server started")
 
-    # ... (rest of the methods remain the same)
-
     def on_stop(self):
         # Cleanup code when the app is closing
         if self.server_thread:
-            # You might need to implement a way to stop the server gracefully
             print("Server closed")
     
     def __init__(self, **kwargs):
