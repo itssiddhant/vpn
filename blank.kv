@@ -161,3 +161,12 @@
                                 height: dp(50)
                                 md_bg_color: 0, 0.5, 0, 1  # Green color
                                 on_release: app.apply_profile_changes()
+                            
+                            MDRaisedButton:
+                                id: Logout_button
+                                text: 'Log-Out'
+                                size_hint_x: 1
+                                height: dp(50)
+                                md_bg_color: 0, 0.5, 0, 1  # Green color
+                                on_release: app.logout_button()
+

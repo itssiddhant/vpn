@@ -4,11 +4,13 @@ from kivymd.app import MDApp
 from kivymd.theming import ThemableBehavior
 from kivymd.uix.menu import MDDropdownMenu
 from kivy.metrics import dp
+import threading
 from kivy.core.window import Window
 from kivymd.uix.button import MDFlatButton
 from kivy.properties import BooleanProperty
 from vpn_client import login_user, send_otp, verify_otp, encrypt_message, send_encrypted_message_to_server
 from register import register_user
+from vpn_server import start_server
 
 class LoginScreen(Screen):
     def toggle_password_visibility(self, instance_textfield):
@@ -99,6 +101,8 @@ class MyApp(MDApp):
         Builder.load_file('username.kv')
         Builder.load_file('blank.kv')
         
+        self.start_server_thread()
+
         sm = ScreenManager()
         sm.add_widget(LoginScreen(name='login'))
         sm.add_widget(SignupScreen(name='signup'))
@@ -107,6 +111,20 @@ class MyApp(MDApp):
         sm.add_widget(ForgotPasswordScreen(name='forgot_password'))
         sm.add_widget(BlankScreen(name='blank'))
         return sm
+    
+    def start_server_thread(self):
+        self.server_thread = threading.Thread(target=start_server)
+        self.server_thread.daemon = True  # This ensures the thread will close when the main app closes
+        self.server_thread.start()
+        print("Server started")
+
+    # ... (rest of the methods remain the same)
+
+    def on_stop(self):
+        # Cleanup code when the app is closing
+        if self.server_thread:
+            # You might need to implement a way to stop the server gracefully
+            print("Server closed")
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -271,5 +289,9 @@ class MyApp(MDApp):
         # Here you would typically save these changes to a database or file
         print(f"Applying changes: Username: {username}, Organization: {organization}, Role: {role}")
 
+    def logout_button(self):
+        print("Logout")
+
 if __name__ == '__main__':
     MyApp().run()
+    
