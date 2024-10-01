@@ -5,7 +5,6 @@ import random
 import smtplib
 import time
 from firebase_details import firebaseConfig
-from encdec import encrypt_message 
 
 firebase = pyrebase.initialize_app(firebaseConfig)
 auth = firebase.auth()
@@ -106,20 +105,3 @@ def send_encrypted_message_to_server(encrypted_message):
     except Exception as e:
         print(f"Error sending encrypted message to server: {e}")
 
-def main():
-    email = input("Enter your email: ")
-    password = input("Enter your password: ")
-    
-    if login_user(email, password):
-        send_otp(email,email,password)
-        otp = input("Enter the OTP sent to your email: ")
-        
-        if verify_otp(email, otp):
-            message = input("Enter the message to be sent: ")
-            encrypted_message = encrypt_message(message)
-            print(f"Encrypted message: {encrypted_message}")
-            
-            send_encrypted_message_to_server(encrypted_message)
-
-if __name__ == "__main__":
-    main()
