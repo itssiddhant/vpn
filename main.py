@@ -8,9 +8,10 @@ import threading
 from kivy.core.window import Window
 from kivymd.uix.button import MDFlatButton
 from kivy.properties import BooleanProperty
-from vpn_client import login_user, send_otp, verify_otp, encrypt_message, send_encrypted_message_to_server
+from vpn_client import login_user, send_otp, verify_otp, send_encrypted_message_to_server
 from register import register_user
 from vpn_server import start_server
+from encdec import encrypt_message
 
 class LoginScreen(Screen):
     def toggle_password_visibility(self, instance_textfield):
@@ -287,6 +288,7 @@ class MyApp(MDApp):
         print(f"Applying changes: Username: {username}, Organization: {organization}, Role: {role}")
 
     def logout_button(self):
+        self.root.current = 'login'
         print("Logout")
 
 if __name__ == '__main__':

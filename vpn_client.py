@@ -4,7 +4,15 @@ import hashlib
 import random
 import smtplib
 import time
+import socket
+import pyrebase
+import hashlib
+import random
+import smtplib
+import time
+from datetime import datetime
 from cryptography.fernet import Fernet
+import platform
 from firebase_details import firebaseConfig
 
 firebase = pyrebase.initialize_app(firebaseConfig)
@@ -14,9 +22,6 @@ db = firebase.database()
 LOGIN_ATTEMPTS = {}
 MAX_ATTEMPTS = 5
 ATTEMPT_PERIOD = 60 
-
-key = 'TzsdHHMBorkGJau6p0S1MDX2MIWNN_7f90XQmLIIQVI='
-cipher_suite = Fernet(key)
 
 def rate_limited_login(email):
     """Rate limits login attempts."""
@@ -35,10 +40,34 @@ def rate_limited_login(email):
     LOGIN_ATTEMPTS[email].append(current_time)
     return True
 
+
 def hash_password(password):
     """Hashes the password using SHA-256."""
     return hashlib.sha256(password.encode()).hexdigest()
 
+def get_device_info():
+    """Gets the device information (hostname and platform details)."""
+    device_info = {
+        "hostname": socket.gethostname(),
+        "ip_address": socket.gethostbyname(socket.gethostname()),
+        "platform": platform.system(),
+        "platform_version": platform.version()
+    }
+    return device_info
+
+def log_login_attempt(email, device_info):
+    """Logs the login time and device information in Firebase."""
+    login_data = {
+        "email": email,
+        "login_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "device_info": device_info
+    }
+    try:
+        db.child("login_logs").push(login_data)
+        print("Login attempt logged successfully.")
+    except Exception as e:
+        print(f"Error logging login attempt: {e}")
+        
 def login_user(email, password):
     """Logs in the user with Firebase authentication."""
     if not rate_limited_login(email):
@@ -48,6 +77,9 @@ def login_user(email, password):
     try:
         user = auth.sign_in_with_email_and_password(email, hashed_password)
         print("Login successful")
+        device_info = get_device_info()
+        
+        log_login_attempt(email, device_info)
         return user['idToken']
     except Exception as e:
         print(f"Error logging in: {e}")
@@ -100,11 +132,6 @@ def verify_otp(email, otp):
         print("Invalid OTP")
         return False
 
-def encrypt_message(message):
-    """Encrypts the message before sending."""
-    encrypted_message = cipher_suite.encrypt(message.encode())
-    return encrypted_message
-
 def send_encrypted_message_to_server(encrypted_message):
     try:
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -114,20 +141,3 @@ def send_encrypted_message_to_server(encrypted_message):
     except Exception as e:
         print(f"Error sending encrypted message to server: {e}")
 
-def main():
-    email = input("Enter your email: ")
-    password = input("Enter your password: ")
-    
-    if login_user(email, password):
-        send_otp(email,email,password)
-        otp = input("Enter the OTP sent to your email: ")
-        
-        if verify_otp(email, otp):
-            message = input("Enter the message to be sent: ")
-            encrypted_message = encrypt_message(message)
-            print(f"Encrypted message: {encrypted_message}")
-            
-            send_encrypted_message_to_server(encrypted_message)
-
-if __name__ == "__main__":
-    main()

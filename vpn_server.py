@@ -1,18 +1,14 @@
 import socket
 import logging
-from cryptography.fernet import Fernet
 from datetime import datetime, timedelta
+from encdec import decrypt_message
 
 # Configuration
 SERVER_IP = 'localhost'
 SERVER_PORT = 12345
-KEY = b'TzsdHHMBorkGJau6p0S1MDX2MIWNN_7f90XQmLIIQVI='
 
 # Set up logging
 logging.basicConfig(filename='vpn_server.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# Encryption setup
-cipher_suite = Fernet(KEY)
 
 # Rate limiting configuration
 RATE_LIMIT_WINDOW = timedelta(minutes=1)
@@ -35,15 +31,6 @@ def rate_limited(address):
     # Record this request
     REQUESTS_LOG[address].append(current_time)
     return True
-
-def decrypt_message(encrypted_message):
-    """Decrypts the received message."""
-    try:
-        decrypted_message = cipher_suite.decrypt(encrypted_message).decode()
-        return decrypted_message
-    except Exception as e:
-        logging.error(f"Error decrypting message: {e}")
-        return None
 
 def handle_client_connection(client_socket, client_address):
     """Handles client connection and message decryption."""
