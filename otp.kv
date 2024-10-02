@@ -1,4 +1,5 @@
 <OTPScreen>:
+    on_leave: app.reset_otp_field()
     FloatLayout:
         canvas.before:
             Color:
@@ -53,8 +54,7 @@
                 height: dp(50)
                 pos_hint: {'center_x': 0.5}
                 md_bg_color: 0, 0.5, 0, 1
-                on_release: 
-                    app.enter_otp()
+                on_release: app.enter_otp()
             
             MDLabel:
                 id: error_label
@@ -65,7 +65,7 @@
                 height: self.texture_size[1]
 
             MDFlatButton:
-                text: 'Go back to Login'
+                text: 'Go back to Signup'
                 pos_hint: {'center_x': 0.5}
                 theme_text_color: "Custom"
                 text_color: 0, 0.5, 0, 1

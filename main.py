@@ -120,6 +120,38 @@ class MyApp(MDApp):
         self.user_email = "Guest"
         self.user_password = None
         self.user_otp = None
+    
+    def reset_login_fields(self):
+        """Reset login screen fields"""
+        login_screen = self.root.get_screen('login')  # Ensure this matches your screen name
+        login_screen.ids.username.text = ''  # Reset username field
+        login_screen.ids.password.text = ''
+
+    def reset_signup_fields(self):
+        """Reset signup screen fields"""
+        signup_screen = self.root.get_screen('signup')  # Ensure this matches your screen name
+        signup_screen.ids.signup_username.text = ""
+        signup_screen.ids.signup_password.text = ""
+        signup_screen.ids.confirm_password.text = ""
+        signup_screen.ids.organization_dropdown.text = ""
+    
+    def reset_username_field(self):
+        """Reset the username input field."""
+        username_screen = self.root.get_screen('username')
+        username_screen.ids.username_input.text = ""
+
+    def reset_otp_field(self):
+        """Reset OTP screen field"""
+        otp_screen = self.root.get_screen('otp')  # Ensure this matches your screen name
+        otp_screen.ids.otp_input.text = ""
+
+    def reset_forgot_password_fields(self):
+        """Reset forgot password screen fields"""
+        forgot_password_screen = self.root.get_screen('forgot_password')  # Ensure this matches your screen name
+        forgot_password_screen.ids.otp.text = ""
+        forgot_password_screen.ids.new_password.text = ""
+        forgot_password_screen.ids.confirm_password.text = ""
+
 
     def login(self, email, password):
         hashed_password = hash_password(password)
