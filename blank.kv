@@ -77,136 +77,148 @@
                     text: 'Profile'
                     icon: 'account'
 
-                    MDFloatLayout:
-                        canvas.before:
-                            Color:
-                                rgba: 0.1, 0.1, 0.1, 1  # Dark grey background
-                            Rectangle:
-                                pos: self.pos
-                                size: self.size
+                    ScrollView:
+                        do_scroll_x: False
+                        do_scroll_y: True
 
                         MDBoxLayout:
                             orientation: 'vertical'
-                            size_hint: None, None
-                            size: min(root.width - dp(40), dp(340)), self.minimum_height
-                            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-                            spacing: dp(20)
+                            size_hint_y: None
+                            height: self.minimum_height
                             padding: dp(20)
+                            spacing: dp(20)
 
                             canvas.before:
                                 Color:
-                                    rgba: 0.2, 0.2, 0.2, 1  # Light grey for the box
-                                RoundedRectangle:
+                                    rgba: 0.1, 0.1, 0.1, 1  # Dark grey background
+                                Rectangle:
                                     pos: self.pos
                                     size: self.size
-                                    radius: [15, 15, 15, 15]
-                                Color:
-                                    rgba: 0, 0.5, 0, 1  # Green color for border
-                                Line:
-                                    rounded_rectangle: (self.x, self.y, self.width, self.height, 15)
-                                    width: 2  # Border width
 
-                            MDLabel:
-                                text: 'Profile'
-                                font_style: 'H4'
-                                halign: 'center'
-                                theme_text_color: "Custom"
-                                text_color: 0, 0.5, 0, 1  # Green color
-                                size_hint_y: None
-                                height: self.texture_size[1]
-                                padding_y: dp(15)
+                            MDBoxLayout:
+                                orientation: 'vertical'
+                                size_hint: None, None
+                                size: min(root.width - dp(40), dp(340)), self.minimum_height
+                                pos_hint: {'center_x': 0.5}
+                                spacing: dp(20)
+                                padding: dp(20)
 
-                            MDLabel:
-                                id: profile_username
-                                text: app.user_email  # Display the logged-in user's email or "Guest"
-                                halign: 'center'
-                                theme_text_color: "Custom"
-                                text_color: 0, 0.5, 0, 1  # Green color
-                                font_style: 'H6'
-                                size_hint_y: None
-                                height: self.texture_size[1]
-                                
-                            MDTextField:
-                                id: organization_dropdown
-                                hint_text: 'Select Organization'
-                                icon_right: 'chevron-down'
-                                size_hint_x: 1
-                                font_size: dp(18)
-                                mode: "rectangle"
-                                line_color_normal: 0, 0.5, 0, 1  # Green color
-                                readonly: True
-                                on_focus: if self.focus: app.show_organization_menu(self)
+                                canvas.before:
+                                    Color:
+                                        rgba: 0.2, 0.2, 0.2, 1  # Light grey for the box
+                                    RoundedRectangle:
+                                        pos: self.pos
+                                        size: self.size
+                                        radius: [15, 15, 15, 15]
+                                    Color:
+                                        rgba: 0, 0.5, 0, 1  # Green color for border
+                                    Line:
+                                        rounded_rectangle: (self.x, self.y, self.width, self.height, 15)
+                                        width: 2  # Border width
 
-                            MDLabel:
-                                text: 'Pending Requests'
-                                font_style: 'H6'
-                                halign: 'center'
-                                theme_text_color: "Custom"
-                                text_color: 0, 0.5, 0, 1  # Green color
-                                size_hint_y: None
-                                height: self.texture_size[1]
-                                padding_y: dp(10)
+                                MDLabel:
+                                    text: 'Profile'
+                                    font_style: 'H4'
+                                    halign: 'center'
+                                    theme_text_color: "Custom"
+                                    text_color: 0, 0.5, 0, 1  # Green color
+                                    size_hint_y: None
+                                    height: self.texture_size[1]
+                                    padding_y: dp(15)
 
-                            ScrollView:
-                                size_hint_y: None
-                                height: dp(150)  # Adjust the height as needed
-                                do_scroll_x: False
-                                do_scroll_y: True
+                                MDLabel:
+                                    id: profile_username
+                                    text: app.user_email  # Display the logged-in user's email or "Guest"
+                                    halign: 'center'
+                                    theme_text_color: "Custom"
+                                    text_color: 0, 0.5, 0, 1  # Green color
+                                    font_style: 'H6'
+                                    size_hint_y: None
+                                    height: self.texture_size[1]
+                                    
+                                MDTextField:
+                                    id: organization_dropdown
+                                    hint_text: 'Select Organization'
+                                    icon_right: 'chevron-down'
+                                    size_hint_x: 1
+                                    font_size: dp(18)
+                                    mode: "rectangle"
+                                    line_color_normal: 0, 0.5, 0, 1  # Green color
+                                    readonly: True
+                                    on_focus: if self.focus: app.show_organization_menu(self)
 
-                                MDList:
-                                    id: pending_requests_list
-                                    spacing: dp(10)
+                                MDLabel:
+                                    text: 'Pending Requests'
+                                    font_style: 'H6'
+                                    halign: 'center'
+                                    theme_text_color: "Custom"
+                                    text_color: 0, 0.5, 0, 1  # Green color
+                                    size_hint_y: None
+                                    height: self.texture_size[1]
+                                    padding_y: dp(10)
 
-                                    MDCard:
+                                ScrollView:
+                                    do_scroll_x: False
+                                    do_scroll_y: True
+                                    size_hint_y: None
+                                    height: min(dp(200), self.parent.height * 0.4)  # Limit height to 40% of parent or 200dp
+
+                                    MDList:
+                                        id: pending_requests_list
+                                        spacing: dp(10)
                                         size_hint_y: None
-                                        height: dp(60)
-                                        md_bg_color: 0.3, 0.3, 0.3, 1
-                                        padding: dp(10)
+                                        height: self.minimum_height
 
-                                        MDBoxLayout:
-                                            orientation: 'horizontal'
-                                            spacing: dp(10)
+                                        MDCard:
+                                            size_hint_y: None
+                                            height: dp(60)
+                                            md_bg_color: 0.3, 0.3, 0.3, 1
+                                            padding: dp(10)
 
-                                            MDLabel:
-                                                text: 'Request 1'
-                                                theme_text_color: "Custom"
-                                                text_color: 1, 1, 1, 1
-                                                size_hint_x: 0.7
+                                            MDBoxLayout:
+                                                orientation: 'horizontal'
+                                                spacing: dp(10)
 
-                                            MDRaisedButton:
-                                                text: 'Approve'
-                                                size_hint_x: 0.3
-                                                md_bg_color: 0, 0.5, 0, 1
+                                                MDLabel:
+                                                    text: 'Request 1'
+                                                    theme_text_color: "Custom"
+                                                    text_color: 1, 1, 1, 1
+                                                    size_hint_x: 0.7
 
-                                    MDCard:
-                                        size_hint_y: None
-                                        height: dp(60)
-                                        md_bg_color: 0.3, 0.3, 0.3, 1
-                                        padding: dp(10)
+                                                MDRaisedButton:
+                                                    text: 'Approve'
+                                                    size_hint_x: 0.3
+                                                    md_bg_color: 0, 0.5, 0, 1
 
-                                        MDBoxLayout:
-                                            orientation: 'horizontal'
-                                            spacing: dp(10)
+                                        MDCard:
+                                            size_hint_y: None
+                                            height: dp(60)
+                                            md_bg_color: 0.3, 0.3, 0.3, 1
+                                            padding: dp(10)
 
-                                            MDLabel:
-                                                text: 'Request 2'
-                                                theme_text_color: "Custom"
-                                                text_color: 1, 1, 1, 1
-                                                size_hint_x: 0.7
+                                            MDBoxLayout:
+                                                orientation: 'horizontal'
+                                                spacing: dp(10)
 
-                                            MDRaisedButton:
-                                                text: 'Approve'
-                                                size_hint_x: 0.3
-                                                md_bg_color: 0, 0.5, 0, 1
+                                                MDLabel:
+                                                    text: 'Request 2'
+                                                    theme_text_color: "Custom"
+                                                    text_color: 1, 1, 1, 1
+                                                    size_hint_x: 0.7
 
-                            Widget:
-                                size_hint_y: None
-                                height: dp(30)  # Increased space before the logout button
+                                                MDRaisedButton:
+                                                    text: 'Approve'
+                                                    size_hint_x: 0.3
+                                                    md_bg_color: 0, 0.5, 0, 1
 
-                            MDRaisedButton:
-                                id: logout_button
-                                text: 'Log-Out'
-                                size_hint_x: 1
-                                height: dp(50)
-                                md_bg_color: 0, 0.5, 0, 1  # Green color
-                                on_release: app.logout_button()
+                                Widget:
+                                    size_hint_y: None
+                                    height: dp(30)  # Increased space before the logout button
+
+                                MDRaisedButton:
+                                    id: logout_button
+                                    text: 'Log-Out'
+                                    size_hint_x: 1
+                                    height: dp(50)
+                                    md_bg_color: 0, 0.5, 0, 1  # Green color
+                                    on_release: app.logout_button()
