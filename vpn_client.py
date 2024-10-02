@@ -139,11 +139,11 @@ def send_encrypted_message_to_server(message):
         key, iv, encrypted_message = encrypted_data[:24], encrypted_data[24:32], encrypted_data[32:]
         
         # Send the encrypted message to the server using HTTPS
-        # response = requests.post('https://your-server-domain.com/receive_message', 
-        #                          data=encrypted_message,
-        #                          headers={'Content-Type': 'application/octet-stream',
-        #                                   'Encryption-Key': key.hex(),
-        #                                   'Encryption-IV': iv.hex()})
+        response = requests.post('https://your-server-domain.com/receive_message', 
+                                data=encrypted_message,
+                                headers={'Content-Type': 'application/octet-stream',
+                                       'Encryption-Key': key.hex(),
+                                       'Encryption-IV': iv.hex()})
         
         if response.status_code == 200:
             print("Message sent and received successfully")
