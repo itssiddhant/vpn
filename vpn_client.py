@@ -15,8 +15,7 @@ import platform
 from firebase_details import firebaseConfig
 import requests
 from encdec import encrypt_message, decrypt_message
-from kivy.uix.popup import Popup
-from kivy.uix.label import Label
+
 
 firebase = pyrebase.initialize_app(firebaseConfig)
 auth = firebase.auth()
@@ -48,51 +47,33 @@ def hash_password(password):
     """Hashes the password using SHA-256."""
     return hashlib.sha256(password.encode()).hexdigest()
 
-def get_device_info():
-    """Gets the device information (hostname and platform details)."""
-    device_info = {
-        "hostname": socket.gethostname(),
-        "ip_address": socket.gethostbyname(socket.gethostname()),
-        "platform": platform.system(),
-        "platform_version": platform.version()
-    }
-    return device_info
-
-def log_login_attempt(email, device_info):
-    """Logs the login time and device information in Firebase."""
-    login_data = {
-        "email": email,
-        "login_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "device_info": device_info
-    }
-    try:
-        db.child("login_logs").push(login_data)
-        print("Login attempt logged successfully.")
-    except Exception as e:
-        print(f"Error logging login attempt: {e}")
-        
 def login_user(email, password):
-    """Logs in the user with Firebase authentication."""
-    if not rate_limited_login(email):
-        return None
-    
     hashed_password = hash_password(password)
     try:
         user = auth.sign_in_with_email_and_password(email, hashed_password)
-        print("Login successful")
-        device_info = get_device_info()
-        
-        log_login_attempt(email, device_info)
-        return user['idToken']
+        user_data = db.child("users").child(user['localId']).get().val()
+        if user_data and user_data['role'].startswith('user-'):
+            print("Login successful")
+            return user['idToken'], user_data
+        else:
+            print("User not approved or invalid role")
+            return None, None
     except Exception as e:
         print(f"Error logging in: {e}")
-        return None
+        return None, None
 
+def record_login(user_id, email):
+    login_data = {
+        "device": platform.platform(),
+        "timestamp": int(time.time())
+    }
+    db.child("users").child(user_id).child("logins").push(login_data)
+    
 def fetch_email_credentials():
     """Fetches the email and password for sending OTP from Firebase database."""
     try:
         users = db.child("users").get().val()
-        for user_id, user_data in users.items():
+        for user_data in users.items():
             email = user_data['email']
             app_password = user_data['password']
             # Return the email and app password
@@ -103,40 +84,6 @@ def fetch_email_credentials():
         print(f"Error fetching email credentials: {e}")
         return None, None
     
-def send_otp(email, recipient_email,password):
-    """Generates and sends an OTP to the user's email."""
-    otp = random.randint(100000, 999999)
-    db.child("otps").child(recipient_email.replace('.', ',')).set(otp)
-    print(email+password)
-    # Send OTP via email (using SMTP)
-    print(otp)
-    try:
-        
-        if email and password:
-            server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-            server.login(email, password)  # Use fetched credentials
-            message = f"Your OTP is {otp}"
-            server.sendmail(email, recipient_email, message)
-            server.quit()
-            print("OTP sent successfully")
-        else:
-            print("Failed to send OTP due to missing email credentials.")
-    except Exception as e:
-        print(f"Error sending OTP: {e}")
-
-
-def verify_otp(email, otp):
-    """Verifies the OTP entered by the user."""
-    stored_otp = db.child("otps").child(email.replace('.', ',')).get().val()
-    if stored_otp == int(otp):
-        print("OTP verified successfully")
-        return True
-    else:
-        # Create and show a pop-up for unauthorized access
-            popup = Popup(title='Unauthorized Access',
-                      content=Label(text='You are not authorized. Please check your credentials.'),
-                      size_hint=(None, None), size=(400, 200))
-            popup.open()
 
 def send_encrypted_message_to_server(message):
     try:

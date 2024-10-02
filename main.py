@@ -4,17 +4,13 @@ from kivymd.app import MDApp
 from kivymd.uix.menu import MDDropdownMenu
 from kivy.metrics import dp
 from kivy.core.window import Window
-from kivy.properties import BooleanProperty
-from vpn_client import login_user, send_otp, verify_otp, send_encrypted_message_to_server
-from register import register_user
 from kivymd.uix.card import MDCard
 from kivymd.uix.label import MDLabel
 from kivymd.uix.button import MDRaisedButton
 from kivymd.uix.boxlayout import MDBoxLayout
-from kivy.uix.popup import Popup
-from kivy.uix.label import Label
-from kivymd.uix.list import MDList
-from kivy.uix.scrollview import ScrollView
+from kivy.properties import BooleanProperty
+from vpn_client import login_user, send_encrypted_message_to_server,record_login
+from register import  send_otp, verify_otp,register_user,db,hash_password
 
 class LoginScreen(Screen):
     def toggle_password_visibility(self, instance_textfield):
@@ -122,27 +118,39 @@ class MyApp(MDApp):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.user_email = "Guest"
+        self.user_password = None
+        self.user_otp = None
 
     def login(self, email, password):
-        self.user_email = email
-        token = login_user(email, password)  # Call login_user from vpn_client
-        if token:
-            send_otp(email, email, password)  # Send OTP using the email and password
-            # otp = input("Enter the OTP sent to your email: ")  # Get OTP input
-            self.root.current = 'otp'
-            # if verify_otp(email, otp):  # Verify OTP
-            #     self.root.current = 'blank'  # Redirect to the main VPN screen
-            # else:
-            #     print("OTP verification failed.")
-        
+        hashed_password = hash_password(password)
+        user_query = db.child("users").order_by_child("email").equal_to(email).get()
+        if user_query.val():
+            user_id = list(user_query.val().keys())[0]
+            user_data = user_query.val()[user_id]
+            if user_data['password'] == hashed_password:
+                self.user_data = user_data
+                self.user_data['localId'] = user_id
+                record_login(user_id, email)
+                self.root.current = 'blank'
+                self.root.get_screen('blank').ids.profile_username.text = email
+                # self.root.get_screen('blank').ids.organization_dropdown.text = user_data['organization']
+                if user_data['role'].startswith('admin-'):
+                    self.update_pending_requests()
+                return True
+        print("Login failed or user not approved")
+        return False
 
     def enter_otp(self):
-    # Add logic for OTP input
         otp = self.root.get_screen('otp').ids.otp_input.text
         if verify_otp(self.user_email, otp):
-            self.root.current = 'blank'
-            self.root.get_screen('blank').ids.profile_username.text = self.user_email  
-        
+            print("OTP verified successfully")
+            if register_user(self.user_email, self.user_password, self.user_organization):
+                print("User registered successfully")
+                self.root.current = 'login'
+            else:
+                print("Registration failed after OTP verification")
+        else:
+            print("OTP verification failed")
 
     def check_username(self, username):
         # Add your logic to check the username here
@@ -152,18 +160,17 @@ class MyApp(MDApp):
         else:
             print(f"Username entered: {username}")
 
-    def signup(self, email, password, confirm_password):
+    def signup(self, email, password, confirm_password, organization):
         if not email or not password or not confirm_password:
             print("All fields are required.")
             return
         
         if password == confirm_password:
-            try:
-                register_user(email, password)  # Register the user using register.py
-                self.root.current = 'login'  # Redirect to login screen after successful signup
-                print(f"User {email} registered successfully!")
-            except Exception as e:
-                print(f"Error during signup: {e}")
+            send_otp(email)
+            self.user_email = email
+            self.user_password = password
+            self.user_organization = organization
+            self.root.current = 'otp'
         else:
             print("Passwords do not match.")
     
@@ -279,61 +286,65 @@ class MyApp(MDApp):
         role = blank_screen.ids.role_dropdown.text
         # Here you would typically save these changes to a database or file
         print(f"Applying changes: Username: {username}, Organization: {organization}, Role: {role}")
+        
+    def update_pending_requests(self):
+        user_organization = self.user_data['organization']
+        pending_requests = db.child("pending_approvals").child(user_organization).get().val()
+        requests_list = self.root.get_screen('blank').ids.pending_requests_list
+        requests_list.clear_widgets()
+
+        if pending_requests and self.user_data['role'].startswith('admin-'):
+            for key, request in pending_requests.items():
+                card = MDCard(
+                    size_hint_y=None,
+                    height=dp(60),
+                    md_bg_color=(0.3, 0.3, 0.3, 1),
+                    padding=dp(10)
+                )
+                box = MDBoxLayout(orientation='horizontal', spacing=dp(10))
+                label = MDLabel(
+                    text=f"{request['email']} - {request['organization']}",
+                    theme_text_color="Custom",
+                    text_color=(1, 1, 1, 1),
+                    size_hint_x=0.7
+                )
+                button = MDRaisedButton(
+                    text='Approve',
+                    size_hint_x=0.3,
+                    md_bg_color=(0, 0.5, 0, 1),
+                    on_release=lambda x, req=request, key=key: self.approve_request(req, key)
+                )
+                box.add_widget(label)
+                box.add_widget(button)
+                card.add_widget(box)
+                requests_list.add_widget(card)
+
+    def approve_request(self, request, key):
+        user_organization = self.user_data['organization']
+        db.child("users").child(request['user_id']).update({"role": f"user-{user_organization}"})
+        db.child("pending_approvals").child(user_organization).child(key).remove()
+        self.update_pending_requests()
+
+    def toggle_vpn(self):
+        blank_screen = self.root.get_screen('blank')
+        if self.user_data['role'].startswith('user-'):
+            blank_screen.vpn_active = not blank_screen.vpn_active
+            if blank_screen.vpn_active:
+                blank_screen.ids.toggle_button.md_bg_color = (0, 0.5, 0, 1)
+                blank_screen.ids.vpn_status.text = "VPN is ON"
+                blank_screen.ids.vpn_status.text_color = (0, 0.5, 0, 1)
+            else:
+                blank_screen.ids.toggle_button.md_bg_color = (0.5, 0, 0, 1)
+                blank_screen.ids.vpn_status.text = "VPN is OFF"
+                blank_screen.ids.vpn_status.text_color = (0.5, 0, 0, 1)
+        else:
+            print("You do not have permission to use VPN")
+
 
     def logout_button(self):
         self.root.current = 'login'
         print("Logout")
 
-    def on_start(self):
-        # Call this method when the app starts to populate the pending requests
-        self.update_pending_requests()
-
-    def update_pending_requests(self):
-        # This method would fetch pending requests from your backend
-        # and update the UI accordingly
-        pending_requests = self.fetch_pending_requests()  # Implement this method
-        requests_list = self.root.get_screen('blank').ids.pending_requests_list
-        requests_list.clear_widgets()  # Clear existing items
-
-        for request in pending_requests:
-            card = MDCard(
-                size_hint_y=None,
-                height=dp(60),
-                md_bg_color=(0.3, 0.3, 0.3, 1),
-                padding=dp(10)
-            )
-            box = MDBoxLayout(orientation='horizontal', spacing=dp(10))
-            label = MDLabel(
-                text=request['text'],
-                theme_text_color="Custom",
-                text_color=(1, 1, 1, 1),
-                size_hint_x=0.7
-            )
-            button = MDRaisedButton(
-                text='Approve',
-                size_hint_x=0.3,
-                md_bg_color=(0, 0.5, 0, 1),
-                on_release=lambda x, req=request: self.approve_request(req)
-            )
-            box.add_widget(label)
-            box.add_widget(button)
-            card.add_widget(box)
-            requests_list.add_widget(card)
-
-    def approve_request(self, request):
-        # Implement the logic to approve a request
-        print(f"Approving request: {request['text']}")
-        # After approval, update the list
-        self.update_pending_requests()
-
-    def fetch_pending_requests(self):
-        # This method should fetch pending requests from your backend
-        # For now, we'll return some dummy data
-        return [
-            {'id': 1, 'text': 'Request 1'},
-            {'id': 2, 'text': 'Request 2'},
-            {'id': 3, 'text': 'Request 3'},
-        ]
-
 if __name__ == '__main__':
     MyApp().run()
+    
