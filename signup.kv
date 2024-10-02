@@ -84,6 +84,7 @@
                 height: dp(50)
                 pos_hint: {'center_x': 0.5}
                 md_bg_color: 0, 0.5, 0, 1  # Green color
+                on_release: app.change_screen('otp')
                 on_release: 
                     app.signup(signup_username.text, signup_password.text, confirm_password.text)
             

@@ -7,6 +7,14 @@ from kivy.core.window import Window
 from kivy.properties import BooleanProperty
 from vpn_client import login_user, send_otp, verify_otp, send_encrypted_message_to_server
 from register import register_user
+from kivymd.uix.card import MDCard
+from kivymd.uix.label import MDLabel
+from kivymd.uix.button import MDRaisedButton
+from kivymd.uix.boxlayout import MDBoxLayout
+from kivy.uix.popup import Popup
+from kivy.uix.label import Label
+from kivymd.uix.list import MDList
+from kivy.uix.scrollview import ScrollView
 
 class LoginScreen(Screen):
     def toggle_password_visibility(self, instance_textfield):
@@ -126,8 +134,7 @@ class MyApp(MDApp):
             #     self.root.current = 'blank'  # Redirect to the main VPN screen
             # else:
             #     print("OTP verification failed.")
-        else:
-            print("Login failed.")
+        
 
     def enter_otp(self):
     # Add logic for OTP input
@@ -135,8 +142,7 @@ class MyApp(MDApp):
         if verify_otp(self.user_email, otp):
             self.root.current = 'blank'
             self.root.get_screen('blank').ids.profile_username.text = self.user_email  
-        else:
-            print("Invalid OTP")
+        
 
     def check_username(self, username):
         # Add your logic to check the username here
@@ -278,6 +284,56 @@ class MyApp(MDApp):
         self.root.current = 'login'
         print("Logout")
 
+    def on_start(self):
+        # Call this method when the app starts to populate the pending requests
+        self.update_pending_requests()
+
+    def update_pending_requests(self):
+        # This method would fetch pending requests from your backend
+        # and update the UI accordingly
+        pending_requests = self.fetch_pending_requests()  # Implement this method
+        requests_list = self.root.get_screen('blank').ids.pending_requests_list
+        requests_list.clear_widgets()  # Clear existing items
+
+        for request in pending_requests:
+            card = MDCard(
+                size_hint_y=None,
+                height=dp(60),
+                md_bg_color=(0.3, 0.3, 0.3, 1),
+                padding=dp(10)
+            )
+            box = MDBoxLayout(orientation='horizontal', spacing=dp(10))
+            label = MDLabel(
+                text=request['text'],
+                theme_text_color="Custom",
+                text_color=(1, 1, 1, 1),
+                size_hint_x=0.7
+            )
+            button = MDRaisedButton(
+                text='Approve',
+                size_hint_x=0.3,
+                md_bg_color=(0, 0.5, 0, 1),
+                on_release=lambda x, req=request: self.approve_request(req)
+            )
+            box.add_widget(label)
+            box.add_widget(button)
+            card.add_widget(box)
+            requests_list.add_widget(card)
+
+    def approve_request(self, request):
+        # Implement the logic to approve a request
+        print(f"Approving request: {request['text']}")
+        # After approval, update the list
+        self.update_pending_requests()
+
+    def fetch_pending_requests(self):
+        # This method should fetch pending requests from your backend
+        # For now, we'll return some dummy data
+        return [
+            {'id': 1, 'text': 'Request 1'},
+            {'id': 2, 'text': 'Request 2'},
+            {'id': 3, 'text': 'Request 3'},
+        ]
+
 if __name__ == '__main__':
     MyApp().run()
-    

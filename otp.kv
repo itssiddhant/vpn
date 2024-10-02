@@ -2,7 +2,7 @@
     FloatLayout:
         canvas.before:
             Color:
-                rgba: 0.1, 0.1, 0.1, 1  # Dark grey background
+                rgba: 0.1, 0.1, 0.1, 1
             Rectangle:
                 pos: self.pos
                 size: self.size
@@ -17,23 +17,23 @@
             
             canvas.before:
                 Color:
-                    rgba: 0.2, 0.2, 0.2, 1  # Light grey for the box
+                    rgba: 0.2, 0.2, 0.2, 1
                 RoundedRectangle:
                     pos: self.pos
                     size: self.size
                     radius: [15, 15, 15, 15]
                 Color:
-                    rgba: 0, 0.5, 0, 1  # Green color for border
+                    rgba: 0, 0.5, 0, 1
                 Line:
                     rounded_rectangle: (self.x, self.y, self.width, self.height, 15)
-                    width: 2  # Border width
+                    width: 2
             
             MDLabel:
                 text: 'Enter the OTP'
                 font_style: 'H4'
                 halign: 'center'
                 theme_text_color: "Custom"
-                text_color: 0, 0.5, 0, 1  # Green color
+                text_color: 0, 0.5, 0, 1
                 size_hint_y: None
                 height: self.texture_size[1]
                 padding_y: dp(15)
@@ -45,14 +45,14 @@
                 size_hint_x: 1
                 font_size: dp(18)
                 mode: "rectangle"
-                line_color_normal: 0, 0.5, 0, 1  # Green color
+                line_color_normal: 0, 0.5, 0, 1
 
             MDRaisedButton:
                 text: 'SUBMIT'
                 size_hint_x: 1
                 height: dp(50)
                 pos_hint: {'center_x': 0.5}
-                md_bg_color: 0, 0.5, 0, 1  # Green color
+                md_bg_color: 0, 0.5, 0, 1
                 on_release: 
                     app.enter_otp()
             
@@ -68,5 +68,5 @@
                 text: 'Go back to Login'
                 pos_hint: {'center_x': 0.5}
                 theme_text_color: "Custom"
-                text_color: 0, 0.5, 0, 1  # Green color
-                on_release: app.change_screen('login')
+                text_color: 0, 0.5, 0, 1
+                on_release: app.change_screen('signup')

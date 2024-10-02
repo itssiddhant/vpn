@@ -63,7 +63,6 @@
                                     size_hint: None, None
                                     size: root.width * 0.15, root.width * 0.15
                                     on_release: root.toggle_vpn() 
-                                        
 
                             MDLabel:
                                 id: vpn_status
@@ -73,14 +72,12 @@
                                 text_color: 0.5, 0, 0, 1  # Red color when OFF
                                 font_style: 'H6'
 
-                            
-
                 MDBottomNavigationItem:
                     name: 'profile'
                     text: 'Profile'
                     icon: 'account'
 
-                    FloatLayout:
+                    MDFloatLayout:
                         canvas.before:
                             Color:
                                 rgba: 0.1, 0.1, 0.1, 1  # Dark grey background
@@ -88,7 +85,7 @@
                                 pos: self.pos
                                 size: self.size
 
-                        BoxLayout:
+                        MDBoxLayout:
                             orientation: 'vertical'
                             size_hint: None, None
                             size: min(root.width - dp(40), dp(340)), self.minimum_height
@@ -140,33 +137,76 @@
                                 readonly: True
                                 on_focus: if self.focus: app.show_organization_menu(self)
 
-                            MDTextField:
-                                id: role_dropdown
-                                hint_text: 'Select Role'
-                                icon_right: 'chevron-down'
-                                size_hint_x: 1
-                                font_size: dp(18)
-                                mode: "rectangle"
-                                line_color_normal: 0, 0.5, 0, 1  # Green color
-                                readonly: True
-                                on_focus: if self.focus: app.show_role_menu(self)
+                            MDLabel:
+                                text: 'Pending Requests'
+                                font_style: 'H6'
+                                halign: 'center'
+                                theme_text_color: "Custom"
+                                text_color: 0, 0.5, 0, 1  # Green color
+                                size_hint_y: None
+                                height: self.texture_size[1]
+                                padding_y: dp(10)
+
+                            ScrollView:
+                                size_hint_y: None
+                                height: dp(150)  # Adjust the height as needed
+                                do_scroll_x: False
+                                do_scroll_y: True
+
+                                MDList:
+                                    id: pending_requests_list
+                                    spacing: dp(10)
+
+                                    MDCard:
+                                        size_hint_y: None
+                                        height: dp(60)
+                                        md_bg_color: 0.3, 0.3, 0.3, 1
+                                        padding: dp(10)
+
+                                        MDBoxLayout:
+                                            orientation: 'horizontal'
+                                            spacing: dp(10)
+
+                                            MDLabel:
+                                                text: 'Request 1'
+                                                theme_text_color: "Custom"
+                                                text_color: 1, 1, 1, 1
+                                                size_hint_x: 0.7
+
+                                            MDRaisedButton:
+                                                text: 'Approve'
+                                                size_hint_x: 0.3
+                                                md_bg_color: 0, 0.5, 0, 1
+
+                                    MDCard:
+                                        size_hint_y: None
+                                        height: dp(60)
+                                        md_bg_color: 0.3, 0.3, 0.3, 1
+                                        padding: dp(10)
+
+                                        MDBoxLayout:
+                                            orientation: 'horizontal'
+                                            spacing: dp(10)
+
+                                            MDLabel:
+                                                text: 'Request 2'
+                                                theme_text_color: "Custom"
+                                                text_color: 1, 1, 1, 1
+                                                size_hint_x: 0.7
+
+                                            MDRaisedButton:
+                                                text: 'Approve'
+                                                size_hint_x: 0.3
+                                                md_bg_color: 0, 0.5, 0, 1
 
                             Widget:
                                 size_hint_y: None
-                                height: dp(30)  # Increased space before the apply button
+                                height: dp(30)  # Increased space before the logout button
 
                             MDRaisedButton:
-                                text: 'APPLY'
-                                size_hint_x: 1
-                                height: dp(50)
-                                md_bg_color: 0, 0.5, 0, 1  # Green color
-                                on_release: app.apply_profile_changes()
-                            
-                            MDRaisedButton:
-                                id: Logout_button
+                                id: logout_button
                                 text: 'Log-Out'
                                 size_hint_x: 1
                                 height: dp(50)
                                 md_bg_color: 0, 0.5, 0, 1  # Green color
                                 on_release: app.logout_button()
-

@@ -15,6 +15,8 @@ import platform
 from firebase_details import firebaseConfig
 import requests
 from encdec import encrypt_message, decrypt_message
+from kivy.uix.popup import Popup
+from kivy.uix.label import Label
 
 firebase = pyrebase.initialize_app(firebaseConfig)
 auth = firebase.auth()
@@ -130,8 +132,11 @@ def verify_otp(email, otp):
         print("OTP verified successfully")
         return True
     else:
-        print("Invalid OTP")
-        return False
+        # Create and show a pop-up for unauthorized access
+            popup = Popup(title='Unauthorized Access',
+                      content=Label(text='You are not authorized. Please check your credentials.'),
+                      size_hint=(None, None), size=(400, 200))
+            popup.open()
 
 def send_encrypted_message_to_server(message):
     try:
