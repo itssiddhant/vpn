@@ -1,71 +1,52 @@
+import os
 import socket
-import logging
-from datetime import datetime, timedelta
+import ssl
+from cryptography.fernet import Fernet
+from flask import Flask, request, jsonify
 from encdec import decrypt_message
 
-# Configuration
-SERVER_IP = 'localhost'
-SERVER_PORT = 12345
+app = Flask(__name__)
 
-# Set up logging
-logging.basicConfig(filename='vpn_server.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# Rate limiting configuration
-RATE_LIMIT_WINDOW = timedelta(minutes=1)
-MAX_REQUESTS = 10
-REQUESTS_LOG = {}
-
-def rate_limited(address):
-    """Rate limits requests from a given IP address."""
-    current_time = datetime.now()
-    requests = REQUESTS_LOG.get(address, [])
-    
-    # Remove requests older than RATE_LIMIT_WINDOW
-    requests = [timestamp for timestamp in requests if current_time - timestamp < RATE_LIMIT_WINDOW]
-    REQUESTS_LOG[address] = requests
-    
-    if len(requests) >= MAX_REQUESTS:
-        logging.warning(f"Rate limit exceeded for {address}")
-        return False
-    
-    # Record this request
-    REQUESTS_LOG[address].append(current_time)
-    return True
-
-def handle_client_connection(client_socket, client_address):
-    """Handles client connection and message decryption."""
-    if not rate_limited(client_address):
-        client_socket.sendall(b'Rate limit exceeded.')
-        client_socket.close()
-        return
-
+@app.route('/receive_message', methods=['POST'])
+def receive_message():
     try:
-        encrypted_message = client_socket.recv(1024)
-        if encrypted_message:
-            decrypted_message = decrypt_message(encrypted_message)
-            if decrypted_message:
-                logging.info(f"Received decrypted message: {decrypted_message}")
-                client_socket.sendall(b'Message received and decrypted.')
-            else:
-                client_socket.sendall(b'Failed to decrypt message.')
-        else:
-            logging.warning("No message received from client.")
+        encrypted_message = request.data
+        encryption_key = bytes.fromhex(request.headers.get('Encryption-Key'))
+        encryption_iv = bytes.fromhex(request.headers.get('Encryption-IV'))
+        
+        if not encryption_key or not encryption_iv:
+            return jsonify({"status": "error", "message": "Encryption key or IV missing"}), 400
+        
+        full_encrypted_data = encryption_key + encryption_iv + encrypted_message
+        decrypted_message = decrypt_message(full_encrypted_data).decode()
+        
+        # Process the decrypted message here
+        print(f"Received and decrypted message: {decrypted_message}")
+        
+        return jsonify({"status": "success", "message": "Message received and decrypted"}), 200
     except Exception as e:
-        logging.error(f"Error handling client connection: {e}")
-    finally:
-        client_socket.close()
+        return jsonify({"status": "error", "message": str(e)}), 400
 
-def start_server():
-    """Starts the VPN server."""
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((SERVER_IP, SERVER_PORT))
-    server_socket.listen(5)
-    logging.info(f"Server listening on {SERVER_IP}:{SERVER_PORT}")
+def run_socket_server():
+    context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    #context.load_cert_chain(certfile="path/to/cert.pem", keyfile="path/to/key.pem")
+    
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(('localhost', 12345))
+        sock.listen(5)
+        with context.wrap_socket(sock, server_side=True) as secure_sock:
+            while True:
+                conn, addr = secure_sock.accept()
+                with conn:
+                    data = conn.recv(1024)
+                    if not data:
+                        break
+                    decrypted_message = decrypt_message(data)
+                    print(f"Received and decrypted message: {decrypted_message}")
 
-    while True:
-        client_socket, addr = server_socket.accept()
-        logging.info(f"Connection from {addr}")
-        handle_client_connection(client_socket, addr)
-
-if __name__ == "__main__":
-    start_server()
+if __name__ == '__main__':
+    # To test
+    app.run(ssl_context='adhoc')
+    # if actual production we use wgsi server, figuring that out
+    # run_socket_server()  # to run the socket server
+    

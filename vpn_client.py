@@ -14,6 +14,8 @@ from datetime import datetime
 from cryptography.fernet import Fernet
 import platform
 from firebase_details import firebaseConfig
+import requests
+from encdec import encrypt_message, decrypt_message
 
 firebase = pyrebase.initialize_app(firebaseConfig)
 auth = firebase.auth()
@@ -132,12 +134,22 @@ def verify_otp(email, otp):
         print("Invalid OTP")
         return False
 
-def send_encrypted_message_to_server(encrypted_message):
+def send_encrypted_message_to_server(message):
     try:
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client_socket.connect(('localhost', 12345))
-        client_socket.sendall(encrypted_message)
-        client_socket.close()
+        encrypted_data = encrypt_message(message.encode())
+        key, iv, encrypted_message = encrypted_data[:24], encrypted_data[24:32], encrypted_data[32:]
+        
+        # Send the encrypted message to the server using HTTPS
+        # response = requests.post('https://your-server-domain.com/receive_message', 
+        #                          data=encrypted_message,
+        #                          headers={'Content-Type': 'application/octet-stream',
+        #                                   'Encryption-Key': key.hex(),
+        #                                   'Encryption-IV': iv.hex()})
+        
+        if response.status_code == 200:
+            print("Message sent and received successfully")
+        else:
+            print(f"Error sending message: {response.text}")
     except Exception as e:
         print(f"Error sending encrypted message to server: {e}")
 

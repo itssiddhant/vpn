@@ -7,6 +7,7 @@ firebase_details.py
 .venv
 env/
 venv/
+myenv/
 ENV/
 env.bak/
 venv.bak/

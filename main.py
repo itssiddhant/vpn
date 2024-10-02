@@ -80,13 +80,16 @@ class BlankScreen(Screen):
             self.ids.vpn_status.text_color = (0, 0.5, 0, 1)  # Green text color
 
             # Start sending encrypted message to the server
-            message = "This is a VPN test message"
-            encrypted_message = encrypt_message(message)
-            send_encrypted_message_to_server(encrypted_message)
+            message = "VPN connection established"
+            send_encrypted_message_to_server(message)
         else:
             self.ids.toggle_button.md_bg_color = (0.5, 0, 0, 1)  # Red when OFF
             self.ids.vpn_status.text = "VPN is OFF"
             self.ids.vpn_status.text_color = (0.5, 0, 0, 1)  # Red text color
+            
+            # Send disconnection message
+            message = "VPN connection terminated"
+            send_encrypted_message_to_server(message)
 
 class MyApp(MDApp):
     def build(self):
