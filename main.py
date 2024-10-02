@@ -11,7 +11,6 @@ from kivy.properties import BooleanProperty
 from vpn_client import login_user, send_otp, verify_otp, send_encrypted_message_to_server
 from register import register_user
 from vpn_server import start_server
-from encdec import encrypt_message
 
 class LoginScreen(Screen):
     def toggle_password_visibility(self, instance_textfield):
