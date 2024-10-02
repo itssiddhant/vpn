@@ -1,16 +1,12 @@
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivymd.app import MDApp
-from kivymd.theming import ThemableBehavior
 from kivymd.uix.menu import MDDropdownMenu
 from kivy.metrics import dp
-import threading
 from kivy.core.window import Window
-from kivymd.uix.button import MDFlatButton
 from kivy.properties import BooleanProperty
 from vpn_client import login_user, send_otp, verify_otp, send_encrypted_message_to_server
 from register import register_user
-from vpn_server import start_server
 
 class LoginScreen(Screen):
     def toggle_password_visibility(self, instance_textfield):
@@ -104,7 +100,6 @@ class MyApp(MDApp):
         Builder.load_file('username.kv')
         Builder.load_file('blank.kv')
         
-        self.start_server_thread()
 
         sm = ScreenManager()
         sm.add_widget(LoginScreen(name='login'))
@@ -115,16 +110,6 @@ class MyApp(MDApp):
         sm.add_widget(BlankScreen(name='blank'))
         return sm
     
-    def start_server_thread(self):
-        self.server_thread = threading.Thread(target=start_server)
-        self.server_thread.daemon = True  # This ensures the thread will close when the main app closes
-        self.server_thread.start()
-        print("Server started")
-
-    def on_stop(self):
-        # Cleanup code when the app is closing
-        if self.server_thread:
-            print("Server closed")
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
