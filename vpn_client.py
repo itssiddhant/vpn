@@ -1,5 +1,4 @@
 import socket
-import pyrebase
 import hashlib
 import random
 import smtplib
