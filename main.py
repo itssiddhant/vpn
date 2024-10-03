@@ -148,7 +148,8 @@ class MyApp(MDApp):
 
     def reset_forgot_password_fields(self):
         """Reset forgot password screen fields"""
-        forgot_password_screen = self.root.get_screen('forgot_password')  # Ensure this matches your screen name
+        forgot_password_screen = self.root.get_screen('forgot_password')
+        forgot_password_screen.ids.email.text = ""
         forgot_password_screen.ids.otp.text = ""
         forgot_password_screen.ids.new_password.text = ""
         forgot_password_screen.ids.confirm_password.text = ""
@@ -192,6 +193,16 @@ class MyApp(MDApp):
             print("Username is empty.")
         else:
             print(f"Username entered: {username}")
+    
+    def send_reset_otp(self, email):
+        # Check if the email exists in the database
+        try:
+            user = auth.get_user_by_email(email)
+            # If the user exists, send OTP
+            send_otp(email)
+            print(f"OTP sent to {email}")
+        except auth.UserNotFoundError:
+            print(f"No user found with email {email}")
 
     def signup(self, email, password, confirm_password, organization):
         if not email or not password or not confirm_password:
@@ -312,6 +323,27 @@ class MyApp(MDApp):
         caller.text = role_name
         self.role_menu.dismiss()
 
+    def apply_new_password(self, email, otp, new_password, confirm_password):
+        if not email or not otp or not new_password or not confirm_password:
+            print("All fields are required.")
+            return
+
+        if new_password != confirm_password:
+            print("Passwords do not match.")
+            return
+
+        if verify_otp(email, otp):
+            try:
+                user = auth.get_user_by_email(email)
+                hashed_password = hash_password(new_password)
+                db.reference('users').child(user.uid).update({"password": hashed_password})
+                print("Password reset successful")
+                self.root.current = 'login'
+            except Exception as e:
+                print(f"Error resetting password: {e}")
+        else:
+            print("Invalid OTP")
+    
     def apply_profile_changes(self):
         blank_screen = self.root.get_screen('blank')
         username = blank_screen.ids.profile_username.text

@@ -20,8 +20,10 @@ def send_otp(email):
 def verify_otp(email, otp_input):
     stored_otp = otp_storage.get(email)
     if stored_otp and stored_otp['otp'] == otp_input:
-        del otp_storage[email]  # Remove OTP after verification
-        return True
+        current_time = int(time.time())
+        if current_time - stored_otp['timestamp'] <= 300:  # OTP valid for 5 minutes
+            del otp_storage[email]  # Remove OTP after verification
+            return True
     return False
 
 
