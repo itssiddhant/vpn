@@ -12,3 +12,4 @@ env.bak/
 venv.bak/
 
 vpn_server.log
+firebase_key.json

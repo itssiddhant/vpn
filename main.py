@@ -9,8 +9,9 @@ from kivymd.uix.label import MDLabel
 from kivymd.uix.button import MDRaisedButton
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivy.properties import BooleanProperty
-from vpn_client import login_user, send_encrypted_message_to_server,record_login
-from register import  send_otp, verify_otp,register_user,db,hash_password
+from register import send_otp, verify_otp, register_user, hash_password
+from vpn_client import login_user, record_login, send_encrypted_message_to_server
+from firebase_details import db,auth
 
 class LoginScreen(Screen):
     def toggle_password_visibility(self, instance_textfield):
@@ -154,23 +155,23 @@ class MyApp(MDApp):
 
 
     def login(self, email, password):
-        hashed_password = hash_password(password)
-        user_query = db.child("users").order_by_child("email").equal_to(email).get()
-        if user_query.val():
-            user_id = list(user_query.val().keys())[0]
-            user_data = user_query.val()[user_id]
-            if user_data['password'] == hashed_password:
+        try:
+            user = auth.get_user_by_email(email)
+            user_data = db.reference('users').child(user.uid).get()
+            if user_data and user_data['password'] == hash_password(password):
                 self.user_data = user_data
-                self.user_data['localId'] = user_id
-                record_login(user_id, email)
+                self.user_data['localId'] = user.uid
+                record_login(user.uid, email)
                 self.root.current = 'blank'
                 self.root.get_screen('blank').ids.profile_username.text = email
-                # self.root.get_screen('blank').ids.organization_dropdown.text = user_data['organization']
                 if user_data['role'].startswith('admin-'):
                     self.update_pending_requests()
                 return True
-        print("Login failed or user not approved")
-        return False
+            print("Login failed or user not approved")
+            return False
+        except Exception as e:
+            print(f"Login error: {e}")
+            return False
 
     def enter_otp(self):
         otp = self.root.get_screen('otp').ids.otp_input.text
@@ -321,7 +322,7 @@ class MyApp(MDApp):
         
     def update_pending_requests(self):
         user_organization = self.user_data['organization']
-        pending_requests = db.child("pending_approvals").child(user_organization).get().val()
+        pending_requests = db.reference('pending_approvals').child(user_organization).get()
         requests_list = self.root.get_screen('blank').ids.pending_requests_list
         requests_list.clear_widgets()
 
@@ -353,8 +354,8 @@ class MyApp(MDApp):
 
     def approve_request(self, request, key):
         user_organization = self.user_data['organization']
-        db.child("users").child(request['user_id']).update({"role": f"user-{user_organization}"})
-        db.child("pending_approvals").child(user_organization).child(key).remove()
+        db.reference('users').child(request['user_id']).update({"role": f"user-{user_organization}"})
+        db.reference('pending_approvals').child(user_organization).child(key).delete()
         self.update_pending_requests()
 
     def toggle_vpn(self):

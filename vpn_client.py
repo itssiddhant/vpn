@@ -1,10 +1,4 @@
-import socket
-import hashlib
-import random
-import smtplib
-import time
-import socket
-import pyrebase
+from firebase_details import firebase_app, db, auth
 import hashlib
 import random
 import smtplib
@@ -12,14 +6,9 @@ import time
 from datetime import datetime
 from cryptography.fernet import Fernet
 import platform
-from firebase_details import firebaseConfig
 import requests
 from encdec import encrypt_message, decrypt_message
 
-
-firebase = pyrebase.initialize_app(firebaseConfig)
-auth = firebase.auth()
-db = firebase.database()
 
 LOGIN_ATTEMPTS = {}
 MAX_ATTEMPTS = 5
@@ -48,16 +37,22 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def login_user(email, password):
-    hashed_password = hash_password(password)
+    if not rate_limited_login(email):
+        return None, None
+
     try:
-        user = auth.sign_in_with_email_and_password(email, hashed_password)
-        user_data = db.child("users").child(user['localId']).get().val()
-        if user_data and user_data['role'].startswith('user-'):
-            print("Login successful")
-            return user['idToken'], user_data
+        user = auth.get_user_by_email(email)
+        user_data = db.reference('users').child(user.uid).get()
+        
+        if user_data and user_data['password'] == hash_password(password):
+            if user_data['role'].startswith('user-'):
+                print("Login successful")
+                return user.uid, user_data
+            else:
+                print("User not approved or invalid role")
         else:
-            print("User not approved or invalid role")
-            return None, None
+            print("Invalid email or password")
+        return None, None
     except Exception as e:
         print(f"Error logging in: {e}")
         return None, None
@@ -67,17 +62,16 @@ def record_login(user_id, email):
         "device": platform.platform(),
         "timestamp": int(time.time())
     }
-    db.child("users").child(user_id).child("logins").push(login_data)
+    db.reference('users').child(user_id).child("logins").push(login_data)
     
 def fetch_email_credentials():
-    """Fetches the email and password for sending OTP from Firebase database."""
     try:
-        users = db.child("users").get().val()
-        for user_data in users.items():
-            email = user_data['email']
-            app_password = user_data['password']
-            # Return the email and app password
-            return email, app_password
+        users = db.reference('users').get()
+        for user_id, user_data in users.items():
+            email = user_data.get('email')
+            app_password = user_data.get('app_password')  # Assuming you store app password separately
+            if email and app_password:
+                return email, app_password
         print("No email credentials found in the database.")
         return None, None
     except Exception as e:
@@ -91,7 +85,7 @@ def send_encrypted_message_to_server(message):
         key, iv, encrypted_message = encrypted_data[:24], encrypted_data[24:32], encrypted_data[32:]
         
         # Send the encrypted message to the server using HTTPS
-        response = requests.post('https://your-server-domain.com/receive_message', 
+        response = requests.post('https://localhost:4433/receive_message', 
                                 data=encrypted_message,
                                 headers={'Content-Type': 'application/octet-stream',
                                        'Encryption-Key': key.hex(),

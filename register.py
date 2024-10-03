@@ -1,16 +1,12 @@
-import pyrebase
+from firebase_details import credentials, auth, db
 import hashlib
-from firebase_details import firebaseConfig
 import random
 import time
 from collections import defaultdict
 
-firebase = pyrebase.initialize_app(firebaseConfig)
-auth = firebase.auth()
-db = firebase.database()
-
 # In-memory OTP storage
 otp_storage = defaultdict(dict)
+
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -32,15 +28,18 @@ def verify_otp(email, otp_input):
 def register_user(email, password, organization):
     hashed_password = hash_password(password)
     try:
-        user = auth.create_user_with_email_and_password(email, password)
-        db.child("users").child(user['localId']).set({
+        user = auth.create_user(
+            email=email,
+            password=password
+        )
+        db.reference('users').child(user.uid).set({
             "email": email,
             "password": hashed_password,  # Store hashed password
             "role": f"none-{organization}",
             "organization": organization
         })
-        db.child("pending_approvals").child(organization).push({
-            "user_id": user['localId'],
+        db.reference('pending_approvals').child(organization).push({
+            "user_id": user.uid,
             "email": email,
             "organization": organization
         })
