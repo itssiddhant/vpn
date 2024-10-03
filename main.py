@@ -5,13 +5,15 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivy.metrics import dp
 from kivy.core.window import Window
 from kivymd.uix.card import MDCard
+from kivymd.uix.dialog import MDDialog
+from kivymd.uix.button import MDFlatButton
 from kivymd.uix.label import MDLabel
 from kivymd.uix.button import MDRaisedButton
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivy.properties import BooleanProperty
-from register import send_otp, verify_otp, register_user, hash_password
+from register import send_otp, verify_otp, register_user, hash_password, is_valid_email, is_strong_password
 from vpn_client import login_user, record_login, send_encrypted_message_to_server
-from firebase_details import db,auth
+from firebase_details import db, auth
 
 class LoginScreen(Screen):
     def toggle_password_visibility(self, instance_textfield):
@@ -185,7 +187,33 @@ class MyApp(MDApp):
                 print("Registration failed after OTP verification")
         else:
             print("OTP verification failed")
+    def show_error_popup(self, message):
+        self.show_popup("Error", message, "error")
 
+    def show_info_popup(self, message):
+        self.show_popup("Information", message, "info")
+
+    def show_popup(self, title, message, popup_type):
+        if popup_type == "error":
+            icon = "alert-circle-outline"
+            icon_color = (1, 0, 0, 1)  # Red
+        else:
+            icon = "information-outline"
+            icon_color = (0, 0.5, 0, 1)  # Green
+
+        dialog = MDDialog(
+            title=title,
+            text=message,
+            buttons=[
+                MDFlatButton(
+                    text="OK",
+                    theme_text_color="Custom",
+                    text_color=self.theme_cls.primary_color,
+                    on_release=lambda x: dialog.dismiss()
+                )
+            ],
+        )
+        dialog.open()
     def check_username(self, username):
         # Add your logic to check the username here
         # For example:
@@ -195,14 +223,18 @@ class MyApp(MDApp):
             print(f"Username entered: {username}")
     
     def send_reset_otp(self, email):
-        # Check if the email exists in the database
+        if not is_valid_email(email):
+            self.show_error_popup("Invalid email format")
+            return
+
         try:
             user = auth.get_user_by_email(email)
-            # If the user exists, send OTP
-            send_otp(email)
-            print(f"OTP sent to {email}")
+            if send_otp(email):
+                self.show_info_popup("OTP sent successfully")
+            else:
+                self.show_error_popup("Failed to send OTP")
         except auth.UserNotFoundError:
-            print(f"No user found with email {email}")
+            self.show_error_popup(f"No user found with email {email}")
 
     def signup(self, email, password, confirm_password, organization):
         if not email or not password or not confirm_password:
@@ -325,11 +357,15 @@ class MyApp(MDApp):
 
     def apply_new_password(self, email, otp, new_password, confirm_password):
         if not email or not otp or not new_password or not confirm_password:
-            print("All fields are required.")
+            self.show_error_popup("All fields are required")
             return
 
         if new_password != confirm_password:
-            print("Passwords do not match.")
+            self.show_error_popup("Passwords do not match")
+            return
+
+        if not is_strong_password(new_password):
+            self.show_error_popup("Password is not strong enough")
             return
 
         if verify_otp(email, otp):
@@ -337,12 +373,12 @@ class MyApp(MDApp):
                 user = auth.get_user_by_email(email)
                 hashed_password = hash_password(new_password)
                 db.reference('users').child(user.uid).update({"password": hashed_password})
-                print("Password reset successful")
+                self.show_info_popup("Password reset successful")
                 self.root.current = 'login'
             except Exception as e:
-                print(f"Error resetting password: {e}")
+                self.show_error_popup(f"Error resetting password: {e}")
         else:
-            print("Invalid OTP")
+            self.show_error_popup("Invalid OTP")
     
     def apply_profile_changes(self):
         blank_screen = self.root.get_screen('blank')
