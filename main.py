@@ -97,12 +97,12 @@ class MyApp(MDApp):
         self.theme_cls.accent_palette = "Teal"
 
         # Load KV files
-        Builder.load_file('login.kv')
-        Builder.load_file('signup.kv')
-        Builder.load_file('otp.kv')
-        Builder.load_file('forgot_password.kv')
-        Builder.load_file('username.kv')
-        Builder.load_file('blank.kv')
+        Builder.load_file('frontend/login.kv')
+        Builder.load_file('frontend/signup.kv')
+        Builder.load_file('frontend/otp.kv')
+        Builder.load_file('frontend/forgot_password.kv')
+        Builder.load_file('frontend/username.kv')
+        Builder.load_file('frontend/blank.kv')
         
 
         sm = ScreenManager()
