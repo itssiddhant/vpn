@@ -2,11 +2,10 @@
     on_leave: app.reset_username_field()  # Update method name to match the Python code
     FloatLayout:
         canvas.before:
-            Color:
-                rgba: 0.1, 0.1, 0.1, 1  # Dark grey background
             Rectangle:
                 pos: self.pos
                 size: self.size
+                source: 'C:/Users/rajat/OneDrive/Desktop/vpn/vpn/world.jpg'
 
         BoxLayout:
             orientation: 'vertical'
@@ -18,7 +17,7 @@
 
             canvas.before:
                 Color:
-                    rgba: 0.2, 0.2, 0.2, 1  # Light grey for the box
+                    rgba: 0, 0, 0, 1
                 RoundedRectangle:
                     pos: self.pos
                     size: self.size
@@ -30,7 +29,7 @@
                     width: 2  # Border width
 
             MDLabel:
-                text: 'Write the Email ID'
+                text: 'Email ID'
                 font_style: 'H4'
                 halign: 'center'
                 theme_text_color: "Custom"
