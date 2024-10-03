@@ -1,12 +1,11 @@
-<SignupScreen>:
-    on_leave: app.reset_signup_fields()
+<UsernameScreen>:
+    on_leave: app.reset_username_field()  # Update method name to match the Python code
     FloatLayout:
         canvas.before:
-            Color:
-                rgba: 0.1, 0.1, 0.1, 1  # Dark grey background
             Rectangle:
                 pos: self.pos
                 size: self.size
+                source: 'C:/Users/rajat/OneDrive/Desktop/vpn/vpn/world.jpg'
 
         BoxLayout:
             orientation: 'vertical'
@@ -15,7 +14,7 @@
             pos_hint: {'center_x': 0.5, 'center_y': 0.5}
             spacing: dp(20)
             padding: dp(20)
-            
+
             canvas.before:
                 Color:
                     rgba: 0.2, 0.2, 0.2, 1  # Light grey for the box
@@ -28,9 +27,9 @@
                 Line:
                     rounded_rectangle: (self.x, self.y, self.width, self.height, 15)
                     width: 2  # Border width
-            
+
             MDLabel:
-                text: 'Sign Up'
+                text: 'Write the Email ID'
                 font_style: 'H4'
                 halign: 'center'
                 theme_text_color: "Custom"
@@ -38,57 +37,35 @@
                 size_hint_y: None
                 height: self.texture_size[1]
                 padding_y: dp(15)
-            
+
             MDTextField:
-                id: signup_username
+                id: username_input
                 hint_text: 'Email ID'
                 icon_right: 'account'
                 size_hint_x: 1
                 font_size: dp(18)
                 mode: "rectangle"
                 line_color_normal: 0, 0.5, 0, 1  # Green color
-            
-            MDTextField:
-                id: organization_dropdown
-                hint_text: 'Select Organization'
-                icon_right: 'chevron-down'
-                size_hint_x: 1
-                font_size: dp(18)
-                mode: "rectangle"
-                line_color_normal: 0, 0.5, 0, 1  # Green color
-                readonly: True
-                on_focus: if self.focus: app.show_signup_organization_menu(self)
-            
-            MDTextField:
-                id: signup_password
-                hint_text: 'Password'
-                size_hint_x: 1
-                font_size: dp(18)
-                password: True
-                mode: "rectangle"
-                icon_right: 'eye-off'
-                line_color_normal: 0, 0.5, 0, 1  # Green color
-            
-            MDTextField:
-                id: confirm_password
-                hint_text: 'Confirm Password'
-                size_hint_x: 1
-                font_size: dp(18)
-                password: True
-                mode: "rectangle"
-                icon_right: 'eye-off'
-                line_color_normal: 0, 0.5, 0, 1  # Green color
-            
+
             MDRaisedButton:
-                text: 'SIGN UP'
+                text: 'SUBMIT'
                 size_hint_x: 1
                 height: dp(50)
                 pos_hint: {'center_x': 0.5}
                 md_bg_color: 0, 0.5, 0, 1  # Green color
-                on_release: app.signup(signup_username.text, signup_password.text, confirm_password.text, organization_dropdown.text)
-            
+                on_release: app.check_username(username_input.text)
+                on_release: app.change_screen('forgot_password')
+
+            MDLabel:
+                id: error_label
+                text: ""
+                theme_text_color: "Error"
+                halign: "center"
+                size_hint_y: None
+                height: self.texture_size[1]
+
             MDFlatButton:
-                text: 'Already have an account? Login'
+                text: 'Go back to Login'
                 pos_hint: {'center_x': 0.5}
                 theme_text_color: "Custom"
                 text_color: 0, 0.5, 0, 1  # Green color

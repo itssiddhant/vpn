@@ -1,12 +1,11 @@
-<ForgotPasswordScreen>:
-    on_leave: app.reset_forgot_password_fields()  # Reset fields when leaving the screen
+<SignupScreen>:
+    on_leave: app.reset_signup_fields()
     FloatLayout:
         canvas.before:
-            Color:
-                rgba: 0.1, 0.1, 0.1, 1  # Dark grey background
             Rectangle:
                 pos: self.pos
                 size: self.size
+                source: 'C:/Users/rajat/OneDrive/Desktop/vpn/vpn/world.jpg'
 
         BoxLayout:
             orientation: 'vertical'
@@ -30,7 +29,7 @@
                     width: 2  # Border width
             
             MDLabel:
-                text: 'Forgot Password'
+                text: 'Sign Up'
                 font_style: 'H4'
                 halign: 'center'
                 theme_text_color: "Custom"
@@ -40,24 +39,35 @@
                 padding_y: dp(15)
             
             MDTextField:
-                id: otp
-                hint_text: 'OTP'
-                icon_right: 'numeric'
+                id: signup_username
+                hint_text: 'Email ID'
+                icon_right: 'account'
                 size_hint_x: 1
                 font_size: dp(18)
                 mode: "rectangle"
                 line_color_normal: 0, 0.5, 0, 1  # Green color
             
             MDTextField:
-                id: new_password
-                hint_text: 'New Password'
+                id: organization_dropdown
+                hint_text: 'Select Organization'
+                icon_right: 'chevron-down'
+                size_hint_x: 1
+                font_size: dp(18)
+                mode: "rectangle"
+                line_color_normal: 0, 0.5, 0, 1  # Green color
+                readonly: True
+                on_focus: if self.focus: app.show_signup_organization_menu(self)
+            
+            MDTextField:
+                id: signup_password
+                hint_text: 'Password'
                 size_hint_x: 1
                 font_size: dp(18)
                 password: True
                 mode: "rectangle"
                 icon_right: 'eye-off'
                 line_color_normal: 0, 0.5, 0, 1  # Green color
-                
+            
             MDTextField:
                 id: confirm_password
                 hint_text: 'Confirm Password'
@@ -67,19 +77,18 @@
                 mode: "rectangle"
                 icon_right: 'eye-off'
                 line_color_normal: 0, 0.5, 0, 1  # Green color
-                
+            
             MDRaisedButton:
-                text: 'Apply'
+                text: 'SIGN UP'
                 size_hint_x: 1
                 height: dp(50)
                 pos_hint: {'center_x': 0.5}
                 md_bg_color: 0, 0.5, 0, 1  # Green color
-                on_release: 
-                    app.apply_new_password(otp.text, new_password.text, confirm_password.text)
+                on_release: app.signup(signup_username.text, signup_password.text, confirm_password.text, organization_dropdown.text)
             
             MDFlatButton:
-                text: 'Back'
+                text: 'Already have an account? Login'
                 pos_hint: {'center_x': 0.5}
                 theme_text_color: "Custom"
                 text_color: 0, 0.5, 0, 1  # Green color
-                on_release: app.change_screen('username')
+                on_release: app.change_screen('login')
