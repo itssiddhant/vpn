@@ -1,15 +1,36 @@
 import os
-import socket
-import ssl
-from cryptography.fernet import Fernet
 from flask import Flask, request, jsonify
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+import pyrebase
+from firebase_details import firebaseConfig
 from encdec import decrypt_message
+import platform
+from datetime import datetime
 
 app = Flask(__name__)
+limiter = Limiter(app, key_func=get_remote_address)
+
+# Initialize Firebase
+firebase = pyrebase.initialize_app(firebaseConfig)
+auth = firebase.auth()
+db = firebase.database()
 
 @app.route('/receive_message', methods=['POST'])
+@limiter.limit("10/minute")  # Adjust rate limit as needed
 def receive_message():
     try:
+        # Verify Firebase ID token
+        id_token = request.headers.get('Authorization')
+        if not id_token:
+            return jsonify({"status": "error", "message": "No authorization token provided"}), 401
+        
+        try:
+            user = auth.get_account_info(id_token)
+            uid = user['users'][0]['localId']
+        except Exception as e:
+            return jsonify({"status": "error", "message": "Invalid authorization token"}), 401
+        
         encrypted_message = request.data
         encryption_key = bytes.fromhex(request.headers.get('Encryption-Key'))
         encryption_iv = bytes.fromhex(request.headers.get('Encryption-IV'))
@@ -21,32 +42,37 @@ def receive_message():
         decrypted_message = decrypt_message(full_encrypted_data).decode()
         
         # Process the decrypted message here
-        print(f"Received and decrypted message: {decrypted_message}")
+        # For now, we'll just print it, but you might want to store it or perform other actions
+        app.logger.info(f"Received and decrypted message from user {uid}: {decrypted_message}")
         
         return jsonify({"status": "success", "message": "Message received and decrypted"}), 200
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 400
+        app.logger.error(f"Error in receive_message: {str(e)}")
+        return jsonify({"status": "error", "message": "An error occurred processing the message"}), 400
 
-def run_socket_server():
-    context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-    #context.load_cert_chain(certfile="path/to/cert.pem", keyfile="path/to/key.pem")
-    
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind(('localhost', 12345))
-        sock.listen(5)
-        with context.wrap_socket(sock, server_side=True) as secure_sock:
-            while True:
-                conn, addr = secure_sock.accept()
-                with conn:
-                    data = conn.recv(1024)
-                    if not data:
-                        break
-                    decrypted_message = decrypt_message(data)
-                    print(f"Received and decrypted message: {decrypted_message}")
-
-if __name__ == '__main__':
-    # To test
-    app.run(ssl_context='adhoc')
-    # if actual production we use wgsi server, figuring that out
-    # run_socket_server()  # to run the socket server
-    
+@app.route('/record_login', methods=['POST'])
+def record_login():
+    try:
+        # Verify Firebase ID token
+        id_token = request.headers.get('Authorization')
+        if not id_token:
+            return jsonify({"status": "error", "message": "No authorization token provided"}), 401
+        
+        try:
+            user = auth.get_account_info(id_token)
+            uid = user['users'][0]['localId']
+        except Exception as e:
+            return jsonify({"status": "error", "message": "Invalid authorization token"}), 401
+        
+        login_data = {
+            "device": platform.platform(),
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        # Record the login data in Firebase
+        db.child("users").child(uid).child("logins").push(login_data)
+        
+        return jsonify({"status": "success", "message": "Login recorded successfully"}), 200
+    except Exception as e:
+        app.logger.error(f"Error in record_login: {str(e)}")
+        return jsonify({"status": "error", "message": "An error occurred recording the login"}), 400
