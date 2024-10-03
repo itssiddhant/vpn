@@ -3,11 +3,10 @@
     FloatLayout:
     
         canvas.before:
-            Color:
-                rgba: 0.1, 0.1, 0.1, 1  # Dark grey background
             Rectangle:
                 pos: self.pos
                 size: self.size
+                source: 'C:/Users/rajat/OneDrive/Desktop/vpn/vpn/world.jpg'
 
         BoxLayout:
             orientation: 'vertical'
@@ -19,7 +18,7 @@
             
             canvas.before:
                 Color:
-                    rgba: 0.2, 0.2, 0.2, 1  # Light grey for the box
+                    rgba: 0, 0, 0, 1 # Light grey for the box
                 RoundedRectangle:
                     pos: self.pos
                     size: self.size
