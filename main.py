@@ -12,7 +12,7 @@ from kivymd.uix.button import MDRaisedButton
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivy.properties import BooleanProperty
 from register import send_otp, verify_otp, register_user, hash_password, is_valid_email, is_strong_password
-from vpn_client import login_user, record_login, send_encrypted_message_to_server
+from vpn_client import record_login, send_encrypted_message_to_server
 from firebase_details import db, auth
 
 class LoginScreen(Screen):
@@ -355,9 +355,9 @@ class MyApp(MDApp):
         caller.text = role_name
         self.role_menu.dismiss()
 
-    def apply_new_password(self, email, otp, new_password, confirm_password):
-        if not email or not otp or not new_password or not confirm_password:
-            self.show_error_popup("All fields are required")
+    def initiate_password_reset(self, email, new_password, confirm_password):
+        if not is_valid_email(email):
+            self.show_error_popup("Invalid email format")
             return
 
         if new_password != confirm_password:
@@ -365,15 +365,35 @@ class MyApp(MDApp):
             return
 
         if not is_strong_password(new_password):
-            self.show_error_popup("Password is not strong enough")
+            self.show_error_popup("Password is not strong enough. It should be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character.")
+            return
+
+        try:
+            user = auth.get_user_by_email(email)
+            if send_otp(email):
+                self.show_info_popup("OTP sent successfully. Please check your email and enter the OTP.")
+                # Store the new password temporarily (you might want to encrypt this in a real-world scenario)
+                self.temp_new_password = new_password
+                # Switch to OTP input screen or enable OTP input field
+                self.root.get_screen('forgot_password').ids.otp.disabled = False
+                self.root.get_screen('forgot_password').ids.apply_button.disabled = False
+            else:
+                self.show_error_popup("Failed to send OTP")
+        except auth.UserNotFoundError:
+            self.show_error_popup(f"No user found with email {email}")
+            
+    def apply_new_password(self, email, otp):
+        if not otp:
+            self.show_error_popup("OTP is required")
             return
 
         if verify_otp(email, otp):
             try:
                 user = auth.get_user_by_email(email)
-                hashed_password = hash_password(new_password)
+                hashed_password = hash_password(self.temp_new_password)
                 db.reference('users').child(user.uid).update({"password": hashed_password})
                 self.show_info_popup("Password reset successful")
+                self.temp_new_password = None  # Clear the stored password
                 self.root.current = 'login'
             except Exception as e:
                 self.show_error_popup(f"Error resetting password: {e}")

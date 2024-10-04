@@ -85,7 +85,7 @@ def send_encrypted_message_to_server(message):
         key, iv, encrypted_message = encrypted_data[:24], encrypted_data[24:32], encrypted_data[32:]
         
         # Send the encrypted message to the server using HTTPS
-        response = requests.post('https://localhost:4433/receive_message', 
+        response = requests.post('http://10.12.47.21:5000/receive_message', 
                                 data=encrypted_message,
                                 headers={'Content-Type': 'application/octet-stream',
                                        'Encryption-Key': key.hex(),
