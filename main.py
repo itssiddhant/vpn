@@ -12,7 +12,7 @@ from kivymd.uix.button import MDRaisedButton
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivy.properties import BooleanProperty
 from register import send_otp, verify_otp, register_user, hash_password, is_valid_email, is_strong_password
-from vpn_client import record_login, send_encrypted_message_to_server
+from vpn_client import record_login, send_encrypted_message_to_server,login_user
 from firebase_details import db, auth
 
 class LoginScreen(Screen):
@@ -76,14 +76,21 @@ class BlankScreen(Screen):
 
     def toggle_vpn(self):
         self.vpn_active = not self.vpn_active
+        app = MDApp.get_running_app()  
         if self.vpn_active:
             self.ids.toggle_button.md_bg_color = (0, 0.5, 0, 1)  # Green when ON
             self.ids.vpn_status.text = "VPN is ON"
             self.ids.vpn_status.text_color = (0, 0.5, 0, 1)  # Green text color
 
             # Start sending encrypted message to the server
+            print(f"Toggling VPN with id_token: {app.id_token}")  # Debug print
             message = "VPN connection established"
-            send_encrypted_message_to_server(message)
+            # Now use the id_token from the app instance
+            if app.id_token is not None:
+                send_encrypted_message_to_server(message, app.id_token)
+            else:
+                print("id_token is None, cannot toggle VPN")
+            
         else:
             self.ids.toggle_button.md_bg_color = (0.5, 0, 0, 1)  # Red when OFF
             self.ids.vpn_status.text = "VPN is OFF"
@@ -91,7 +98,7 @@ class BlankScreen(Screen):
             
             # Send disconnection message
             message = "VPN connection terminated"
-            send_encrypted_message_to_server(message)
+            send_encrypted_message_to_server(message,app.id_token)
 
 class MyApp(MDApp):
     def build(self):
@@ -123,6 +130,7 @@ class MyApp(MDApp):
         self.user_email = "Guest"
         self.user_password = None
         self.user_otp = None
+        self.id_token= None
     
     def reset_login_fields(self):
         """Reset login screen fields"""
@@ -159,14 +167,20 @@ class MyApp(MDApp):
 
     def login(self, email, password):
         try:
-            user = auth.get_user_by_email(email)
-            user_data = db.reference('users').child(user.uid).get()
-            if user_data and user_data['password'] == hash_password(password):
+            user_id, user_data, id_token = login_user(email, password)
+            
+            if user_data and id_token:
+                # Store the token for future API calls
+                self.id_token = id_token
+                
+                # Store user data
                 self.user_data = user_data
-                self.user_data['localId'] = user.uid
-                record_login(user.uid, email)
+                self.user_data['localId'] = user_id
+                
+                record_login(user_id, email)
                 self.root.current = 'blank'
                 self.root.get_screen('blank').ids.profile_username.text = email
+                
                 if user_data['role'].startswith('admin-'):
                     self.update_pending_requests()
                 return True
@@ -175,6 +189,7 @@ class MyApp(MDApp):
         except Exception as e:
             print(f"Login error: {e}")
             return False
+
 
     def enter_otp(self):
         otp = self.root.get_screen('otp').ids.otp_input.text

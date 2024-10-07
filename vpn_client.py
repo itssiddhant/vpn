@@ -38,24 +38,26 @@ def hash_password(password):
 
 def login_user(email, password):
     if not rate_limited_login(email):
-        return None, None
+        return None, None, None
 
     try:
         user = auth.get_user_by_email(email)
         user_data = db.reference('users').child(user.uid).get()
-        
+
         if user_data and user_data['password'] == hash_password(password):
             if user_data['role'].startswith('user-'):
                 print("Login successful")
-                return user.uid, user_data
+                id_token = auth.create_custom_token(user.uid)
+                print(f"Authorization Token: {id_token}")  # For debugging
+                return user.uid, user_data, id_token
             else:
                 print("User not approved or invalid role")
         else:
             print("Invalid email or password")
-        return None, None
+        return None, None, None
     except Exception as e:
         print(f"Error logging in: {e}")
-        return None, None
+        return None, None, None
 
 def record_login(user_id, email):
     login_data = {
@@ -79,7 +81,7 @@ def fetch_email_credentials():
         return None, None
     
 
-def send_encrypted_message_to_server(message):
+def send_encrypted_message_to_server(message,id_token):
     try:
         encrypted_data = encrypt_message(message.encode())
         key, iv, encrypted_message = encrypted_data[:24], encrypted_data[24:32], encrypted_data[32:]
@@ -89,7 +91,8 @@ def send_encrypted_message_to_server(message):
                                 data=encrypted_message,
                                 headers={'Content-Type': 'application/octet-stream',
                                        'Encryption-Key': key.hex(),
-                                       'Encryption-IV': iv.hex()})
+                                       'Encryption-IV': iv.hex(),
+                                       'Authorization': id_token})
         
         if response.status_code == 200:
             print("Message sent and received successfully")
