@@ -8,6 +8,9 @@ from cryptography.fernet import Fernet
 import platform
 import requests
 from encdec import encrypt_message, decrypt_message
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 
 LOGIN_ATTEMPTS = {}
@@ -45,12 +48,20 @@ def login_user(email, password):
         user_data = db.reference('users').child(user.uid).get()
 
         if user_data and user_data['password'] == hash_password(password):
-            if user_data['role'].startswith('user-'):
+           if user_data['role'].startswith('user-'):
                 print("Login successful")
-                id_token = auth.create_custom_token(user.uid)
-                print(f"Authorization Token: {id_token}")  # For debugging
-                return user.uid, user_data, id_token
-            else:
+                custom_token = auth.create_custom_token(user.uid)
+                custom_token_str = custom_token.decode('utf-8')
+                # Exchange custom token for ID token
+                exchange_url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key={os.getenv('FIREBASE_API_KEY')}"
+                response = requests.post(exchange_url, json={"token": custom_token_str, "returnSecureToken": True})
+                if response.status_code == 200:
+                    id_token = response.json()['idToken']
+                    print(f"Authorization Token: {id_token}")  # For debugging
+                    return user.uid, user_data, id_token
+                else:
+                    print("Error exchanging custom token for ID token")
+           else:
                 print("User not approved or invalid role")
         else:
             print("Invalid email or password")
@@ -85,14 +96,15 @@ def send_encrypted_message_to_server(message,id_token):
     try:
         encrypted_data = encrypt_message(message.encode())
         key, iv, encrypted_message = encrypted_data[:24], encrypted_data[24:32], encrypted_data[32:]
-        
+
+        print(f"Toggling VPN with id_token: {id_token}") 
         # Send the encrypted message to the server using HTTPS
-        response = requests.post('https://localhost:4433/receive_message', 
+        response = requests.post('http://localhost:5000/receive_message', 
                                 data=encrypted_message,
                                 headers={'Content-Type': 'application/octet-stream',
                                        'Encryption-Key': key.hex(),
                                        'Encryption-IV': iv.hex(),
-                                       'Authorization': id_token})
+                                       'Authorization': f'Bearer {id_token}'})
         
         if response.status_code == 200:
             print("Message sent and received successfully")

@@ -83,7 +83,7 @@ class BlankScreen(Screen):
             self.ids.vpn_status.text_color = (0, 0.5, 0, 1)  # Green text color
 
             # Start sending encrypted message to the server
-            print(f"Toggling VPN with id_token: {app.id_token}")  # Debug print
+             # Debug print
             message = "VPN connection established"
             # Now use the id_token from the app instance
             if app.id_token is not None:
