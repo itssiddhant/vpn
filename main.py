@@ -103,7 +103,7 @@ class BlankScreen(Screen):
 class MyApp(MDApp):
     def build(self):
         self.theme_cls.theme_style = "Dark"
-        self.theme_cls.primary_palette = "Gray"  # This is now valid
+        self.theme_cls.primary_palette = "Gray" 
         self.theme_cls.accent_palette = "Teal"
 
         # Load KV files
@@ -134,13 +134,13 @@ class MyApp(MDApp):
     
     def reset_login_fields(self):
         """Reset login screen fields"""
-        login_screen = self.root.get_screen('login')  # Ensure this matches your screen name
+        login_screen = self.root.get_screen('login') 
         login_screen.ids.username.text = ''  # Reset username field
         login_screen.ids.password.text = ''
 
     def reset_signup_fields(self):
         """Reset signup screen fields"""
-        signup_screen = self.root.get_screen('signup')  # Ensure this matches your screen name
+        signup_screen = self.root.get_screen('signup') 
         signup_screen.ids.signup_username.text = ""
         signup_screen.ids.signup_password.text = ""
         signup_screen.ids.confirm_password.text = ""
@@ -153,7 +153,7 @@ class MyApp(MDApp):
 
     def reset_otp_field(self):
         """Reset OTP screen field"""
-        otp_screen = self.root.get_screen('otp')  # Ensure this matches your screen name
+        otp_screen = self.root.get_screen('otp') 
         otp_screen.ids.otp_input.text = ""
 
     def reset_forgot_password_fields(self):
@@ -230,8 +230,6 @@ class MyApp(MDApp):
         )
         dialog.open()
     def check_username(self, username):
-        # Add your logic to check the username here
-        # For example:
         if username == "":
             print("Username is empty.")
         else:
@@ -309,7 +307,7 @@ class MyApp(MDApp):
                 "viewclass": "OneLineListItem",
                 "text": country,
                 "on_release": lambda x=country: self.set_country(x, caller),
-            } for country in ["India", "USA", "UK", "Canada", "Australia"]  # Add more countries as needed
+            } for country in ["India", "USA", "UK", "Canada", "Australia"]  
         ]
         self.country_menu = MDDropdownMenu(
             caller=caller,
@@ -387,9 +385,7 @@ class MyApp(MDApp):
             user = auth.get_user_by_email(email)
             if send_otp(email):
                 self.show_info_popup("OTP sent successfully. Please check your email and enter the OTP.")
-                # Store the new password temporarily (you might want to encrypt this in a real-world scenario)
                 self.temp_new_password = new_password
-                # Switch to OTP input screen or enable OTP input field
                 self.root.get_screen('forgot_password').ids.otp.disabled = False
                 self.root.get_screen('forgot_password').ids.apply_button.disabled = False
             else:
@@ -420,7 +416,6 @@ class MyApp(MDApp):
         username = blank_screen.ids.profile_username.text
         organization = blank_screen.ids.organization_dropdown.text
         role = blank_screen.ids.role_dropdown.text
-        # Here you would typically save these changes to a database or file
         print(f"Applying changes: Username: {username}, Organization: {organization}, Role: {role}")
         
     def update_pending_requests(self):

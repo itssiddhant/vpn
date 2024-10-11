@@ -1,10 +1,6 @@
-from firebase_details import firebase_app, db, auth
+from firebase_details import db, auth
 import hashlib
-import random
-import smtplib
 import time
-from datetime import datetime
-from cryptography.fernet import Fernet
 import platform
 import requests
 from encdec import encrypt_message, decrypt_message
@@ -52,7 +48,7 @@ def login_user(email, password):
                 print("Login successful")
                 custom_token = auth.create_custom_token(user.uid)
                 custom_token_str = custom_token.decode('utf-8')
-                # Exchange custom token for ID token
+                
                 exchange_url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key={os.getenv('FIREBASE_API_KEY')}"
                 response = requests.post(exchange_url, json={"token": custom_token_str, "returnSecureToken": True})
                 if response.status_code == 200:
@@ -82,7 +78,7 @@ def fetch_email_credentials():
         users = db.reference('users').get()
         for user_id, user_data in users.items():
             email = user_data.get('email')
-            app_password = user_data.get('app_password')  # Assuming you store app password separately
+            app_password = user_data.get('app_password') 
             if email and app_password:
                 return email, app_password
         print("No email credentials found in the database.")

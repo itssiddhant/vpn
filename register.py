@@ -1,4 +1,4 @@
-from firebase_details import credentials, auth, db
+from firebase_details import  auth, db
 import hashlib
 import random
 import time
