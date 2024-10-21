@@ -1,6 +1,8 @@
 from firebase_details import db, auth
 import hashlib
 import time
+from datetime import datetime
+import pytz 
 import platform
 import requests
 from encdec import encrypt_message, decrypt_message
@@ -15,7 +17,7 @@ ATTEMPT_PERIOD = 60
 
 def rate_limited_login(email):
     """Rate limits login attempts."""
-    current_time = time.time()
+    current_time = datetime.now(pytz.utc).isoformat()
     attempts = LOGIN_ATTEMPTS.get(email, [])
     
     # Remove attempts older than ATTEMPT_PERIOD
@@ -67,9 +69,10 @@ def login_user(email, password):
         return None, None, None
 
 def record_login(user_id, email):
+    time = datetime.now(pytz.utc)
     login_data = {
         "device": platform.platform(),
-        "timestamp": int(time.time())
+        "timestamp": time.isoformat()
     }
     db.reference('users').child(user_id).child("logins").push(login_data)
     

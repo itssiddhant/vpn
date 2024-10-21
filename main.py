@@ -49,8 +49,6 @@ class SignupScreen(Screen):
         return super(SignupScreen, self).on_touch_down(touch)
 
 
-class UsernameScreen(Screen):
-    pass
 class OTPScreen(Screen):
     pass
 
@@ -111,14 +109,12 @@ class MyApp(MDApp):
         Builder.load_file('frontend/signup.kv')
         Builder.load_file('frontend/otp.kv')
         Builder.load_file('frontend/forgot_password.kv')
-        Builder.load_file('frontend/username.kv')
         Builder.load_file('frontend/blank.kv')
         
 
         sm = ScreenManager()
         sm.add_widget(LoginScreen(name='login'))
         sm.add_widget(SignupScreen(name='signup'))
-        sm.add_widget(UsernameScreen(name='username'))
         sm.add_widget(OTPScreen(name='otp'))
         sm.add_widget(ForgotPasswordScreen(name='forgot_password'))
         sm.add_widget(BlankScreen(name='blank'))
@@ -145,11 +141,6 @@ class MyApp(MDApp):
         signup_screen.ids.signup_password.text = ""
         signup_screen.ids.confirm_password.text = ""
         signup_screen.ids.organization_dropdown.text = ""
-    
-    def reset_username_field(self):
-        """Reset the username input field."""
-        username_screen = self.root.get_screen('username')
-        username_screen.ids.username_input.text = ""
 
     def reset_otp_field(self):
         """Reset OTP screen field"""
@@ -229,25 +220,7 @@ class MyApp(MDApp):
             ],
         )
         dialog.open()
-    def check_username(self, username):
-        if username == "":
-            print("Username is empty.")
-        else:
-            print(f"Username entered: {username}")
     
-    def send_reset_otp(self, email):
-        if not is_valid_email(email):
-            self.show_error_popup("Invalid email format")
-            return
-
-        try:
-            user = auth.get_user_by_email(email)
-            if send_otp(email):
-                self.show_info_popup("OTP sent successfully")
-            else:
-                self.show_error_popup("Failed to send OTP")
-        except auth.UserNotFoundError:
-            self.show_error_popup(f"No user found with email {email}")
 
     def signup(self, email, password, confirm_password, organization):
         if not email or not password or not confirm_password:
@@ -291,15 +264,6 @@ class MyApp(MDApp):
 
     def username_to_forgot_password(self):
         self.root.current = 'forgot_password'
-
-    def apply_new_password(self, otp, new_password, confirm_password):
-        # Placeholder for password reset logic
-        if otp and new_password == confirm_password:
-            print("Password reset successful")
-            self.root.current = 'login'
-        else:
-            print("Password reset failed")
-            # Show error message to user
 
     def show_country_menu(self, caller):
         menu_items = [
@@ -345,34 +309,39 @@ class MyApp(MDApp):
         caller.text = organization_name
         self.organization_menu.dismiss()
 
-    def show_role_menu(self, caller):
-        menu_items = [
-        {
-            "viewclass": "OneLineListItem",
-            "text": role,
-            "on_release": lambda x=role: self.set_role(x, caller),
-        } for role in ["Admin", "User", "Manager", "Developer"]
-    ]
-        self.role_menu = MDDropdownMenu(
-            caller=caller,
-            items=menu_items,
-            width_mult=4,
-            max_height=Window.height * 0.5,
-            background_color=self.theme_cls.bg_dark,
-            radius=[15, 15, 15, 15],
-            elevation=4,
-    )
-        self.role_menu.open()
-
-    def set_role(self, role_name, caller):
-        caller.text = role_name
-        self.role_menu.dismiss()
-
-    def initiate_password_reset(self, email, new_password, confirm_password):
+    def initiate_password_reset(self, email):
         if not is_valid_email(email):
             self.show_error_popup("Invalid email format")
             return
 
+        try:
+            user = auth.get_user_by_email(email)
+            if send_otp(email):
+                self.show_info_popup("OTP sent successfully. Please check your email and enter the OTP.")
+                self.root.get_screen('forgot_password').ids.otp.disabled = False 
+                self.root.get_screen('forgot_password').ids.new_password.disabled = True 
+                self.root.get_screen('forgot_password').ids.confirm_password.disabled = True
+                self.root.get_screen('forgot_password').ids.apply_button.disabled = True  
+            else:
+                self.show_error_popup("Failed to send OTP")
+        except auth.UserNotFoundError:
+            self.show_error_popup(f"No user found with email {email}")
+
+    def verify_otp_and_enable_password_reset(self, email, otp):
+        if not otp:
+            self.show_error_popup("OTP is required")
+            return
+
+        if verify_otp(email, otp):
+            self.show_info_popup("OTP verified. You can now enter a new password.")
+            self.root.get_screen('forgot_password').ids.new_password.disabled = False  
+            self.root.get_screen('forgot_password').ids.confirm_password.disabled = False
+            self.root.get_screen('forgot_password').ids.apply_button.disabled = False  
+        else:
+            self.show_error_popup("Invalid OTP")
+
+            
+    def apply_new_password(self, email, new_password, confirm_password):
         if new_password != confirm_password:
             self.show_error_popup("Passwords do not match")
             return
@@ -383,40 +352,12 @@ class MyApp(MDApp):
 
         try:
             user = auth.get_user_by_email(email)
-            if send_otp(email):
-                self.show_info_popup("OTP sent successfully. Please check your email and enter the OTP.")
-                self.temp_new_password = new_password
-                self.root.get_screen('forgot_password').ids.otp.disabled = False
-                self.root.get_screen('forgot_password').ids.apply_button.disabled = False
-            else:
-                self.show_error_popup("Failed to send OTP")
-        except auth.UserNotFoundError:
-            self.show_error_popup(f"No user found with email {email}")
-            
-    def apply_new_password(self, email, otp):
-        if not otp:
-            self.show_error_popup("OTP is required")
-            return
-
-        if verify_otp(email, otp):
-            try:
-                user = auth.get_user_by_email(email)
-                hashed_password = hash_password(self.temp_new_password)
-                db.reference('users').child(user.uid).update({"password": hashed_password})
-                self.show_info_popup("Password reset successful")
-                self.temp_new_password = None  # Clear the stored password
-                self.root.current = 'login'
-            except Exception as e:
-                self.show_error_popup(f"Error resetting password: {e}")
-        else:
-            self.show_error_popup("Invalid OTP")
-    
-    def apply_profile_changes(self):
-        blank_screen = self.root.get_screen('blank')
-        username = blank_screen.ids.profile_username.text
-        organization = blank_screen.ids.organization_dropdown.text
-        role = blank_screen.ids.role_dropdown.text
-        print(f"Applying changes: Username: {username}, Organization: {organization}, Role: {role}")
+            hashed_password = hash_password(new_password)
+            db.reference('users').child(user.uid).update({"password": hashed_password})
+            self.show_info_popup("Password reset successful")
+            self.root.current = 'login'
+        except Exception as e:
+            self.show_error_popup(f"Error resetting password: {e}")
         
     def update_pending_requests(self):
         user_organization = self.user_data['organization']

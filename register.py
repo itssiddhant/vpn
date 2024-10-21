@@ -3,6 +3,8 @@ import hashlib
 import random
 import time
 from collections import defaultdict
+from datetime import datetime,timedelta
+import pytz
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -57,7 +59,8 @@ def send_otp(email):
         return False
 
     otp = str(random.randint(100000, 999999))
-    otp_storage[email] = {"otp": otp, "timestamp": int(time.time())}
+    time = datetime.now(pytz.utc)
+    otp_storage[email] = {"otp": otp, "timestamp": time}
     
     subject = "Password Reset OTP"
     body = f"Your OTP for password reset is: {otp}\nThis OTP is valid for 5 minutes."
@@ -69,8 +72,8 @@ def send_otp(email):
 def verify_otp(email, otp_input):
     stored_otp = otp_storage.get(email)
     if stored_otp and stored_otp['otp'] == otp_input:
-        current_time = int(time.time())
-        if current_time - stored_otp['timestamp'] <= 300:  # OTP valid for 5 minutes
+        current_time = datetime.now(pytz.utc)
+        if current_time - stored_otp['timestamp'] <= timedelta(minutes=5):  # OTP valid for 5 minutes
             del otp_storage[email]  # Remove OTP after verification
             return True
     return False
