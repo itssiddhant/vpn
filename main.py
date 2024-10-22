@@ -193,10 +193,15 @@ class MyApp(MDApp):
                 if user_data['role'].startswith('admin-'):
                     self.update_pending_requests()
                 return True
-            print("Login failed or user not approved")
-            return False
+            else:
+                # Clear fields on failed login
+                self.reset_login_fields()
+                self.show_error_popup("Invalid email or password")
+                return False
         except Exception as e:
             print(f"Login error: {e}")
+            self.reset_login_fields()
+            self.show_error_popup(f"Login failed: {str(e)}")
             return False
 
 
