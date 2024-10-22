@@ -10,9 +10,9 @@ from kivymd.uix.button import MDFlatButton
 from kivymd.uix.label import MDLabel
 from kivymd.uix.button import MDRaisedButton
 from kivymd.uix.boxlayout import MDBoxLayout
-from kivy.properties import BooleanProperty
+from kivy.properties import BooleanProperty,ListProperty
 from register import send_otp, verify_otp, register_user, hash_password, is_valid_email, is_strong_password
-from vpn_client import record_login, send_encrypted_message_to_server,login_user
+from vpn_client import record_login, send_encrypted_message_to_server,login_user,fetch_login_details
 from firebase_details import db, auth
 
 class LoginScreen(Screen):
@@ -70,33 +70,51 @@ class ForgotPasswordScreen(Screen):
 
 class BlankScreen(Screen):
     vpn_active = BooleanProperty(False)  # Track VPN status
-    
+    last_login_details = ListProperty([])
 
+    def on_pre_enter(self):
+        self.fetch_last_login_details()
+
+    def fetch_last_login_details(self):
+        app = MDApp.get_running_app()
+        user_id = app.user_data['localId'] 
+        login_details = fetch_login_details(user_id) 
+        if login_details is None:
+            login_details = [] 
+        
+        self.last_login_details = login_details
+        
     def toggle_vpn(self):
         self.vpn_active = not self.vpn_active
-        app = MDApp.get_running_app()  
-        if self.vpn_active:
-            self.ids.toggle_button.md_bg_color = (0, 0.5, 0, 1)  # Green when ON
-            self.ids.vpn_status.text = "VPN is ON"
-            self.ids.vpn_status.text_color = (0, 0.5, 0, 1)  # Green text color
+        app = MDApp.get_running_app()
 
-            # Start sending encrypted message to the server
-             # Debug print
+        if self.vpn_active:
+            # Start VPN connection process
             message = "VPN connection established"
-            # Now use the id_token from the app instance
+
+            # Ensure we have an id_token before proceeding
             if app.id_token is not None:
-                send_encrypted_message_to_server(message, app.id_token)
+                
+                success = send_encrypted_message_to_server(message, app.id_token)
+
+                if success:
+                    self.ids.toggle_button.md_bg_color = (0, 0.5, 0, 1)  # Green when ON
+                    self.ids.vpn_status.text = "VPN is ON"
+                    self.ids.vpn_status.text_color = (0, 0.5, 0, 1)  # Green text color
+                else:
+                    self.vpn_active = False
+                    print("Failed to establish VPN connection.")
             else:
+                self.vpn_active = False
                 print("id_token is None, cannot toggle VPN")
-            
         else:
+            # Send disconnection message
+            message = "VPN connection terminated"
+            send_encrypted_message_to_server(message, app.id_token)
+
             self.ids.toggle_button.md_bg_color = (0.5, 0, 0, 1)  # Red when OFF
             self.ids.vpn_status.text = "VPN is OFF"
             self.ids.vpn_status.text_color = (0.5, 0, 0, 1)  # Red text color
-            
-            # Send disconnection message
-            message = "VPN connection terminated"
-            send_encrypted_message_to_server(message,app.id_token)
 
 class MyApp(MDApp):
     def build(self):
@@ -396,21 +414,6 @@ class MyApp(MDApp):
         db.reference('users').child(request['user_id']).update({"role": f"user-{user_organization}"})
         db.reference('pending_approvals').child(user_organization).child(key).delete()
         self.update_pending_requests()
-
-    def toggle_vpn(self):
-        blank_screen = self.root.get_screen('blank')
-        if self.user_data['role'].startswith('user-'):
-            blank_screen.vpn_active = not blank_screen.vpn_active
-            if blank_screen.vpn_active:
-                blank_screen.ids.toggle_button.md_bg_color = (0, 0.5, 0, 1)
-                blank_screen.ids.vpn_status.text = "VPN is ON"
-                blank_screen.ids.vpn_status.text_color = (0, 0.5, 0, 1)
-            else:
-                blank_screen.ids.toggle_button.md_bg_color = (0.5, 0, 0, 1)
-                blank_screen.ids.vpn_status.text = "VPN is OFF"
-                blank_screen.ids.vpn_status.text_color = (0.5, 0, 0, 1)
-        else:
-            print("You do not have permission to use VPN")
 
 
     def logout_button(self):

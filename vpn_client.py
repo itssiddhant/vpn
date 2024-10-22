@@ -46,7 +46,7 @@ def login_user(email, password):
         user_data = db.reference('users').child(user.uid).get()
 
         if user_data and user_data['password'] == hash_password(password):
-           if user_data['role'].startswith('user-'):
+           if user_data['role'].startswith('user-') | user_data['role'].startswith('admin-'):
                 print("Login successful")
                 custom_token = auth.create_custom_token(user.uid)
                 custom_token_str = custom_token.decode('utf-8')
@@ -89,7 +89,24 @@ def fetch_email_credentials():
     except Exception as e:
         print(f"Error fetching email credentials: {e}")
         return None, None
-    
+
+def fetch_login_details(user_id):
+    try:
+        logins = db.reference('users').child(user_id).child('logins').order_by_child('timestamp').limit_to_last(3).get()
+
+        last_login_details = []
+        if logins:
+            for login_data in reversed(list(logins.values())):
+                login_time = datetime.fromisoformat(login_data['timestamp'])
+                login_time_local = login_time.astimezone(pytz.timezone('Asia/Kolkata'))
+                last_login_details.append(login_time_local.strftime('%Y-%m-%d %H:%M:%S'))
+        else:
+            last_login_details = ['No login data available']
+
+        return last_login_details
+    except Exception as e:
+        print(f"Error fetching login details: {e}")
+        return None
 
 def send_encrypted_message_to_server(message,id_token):
     try:
@@ -107,8 +124,11 @@ def send_encrypted_message_to_server(message,id_token):
         
         if response.status_code == 200:
             print("Message sent and received successfully")
+            return True
         else:
             print(f"Error sending message: {response.text}")
+            return False
     except Exception as e:
         print(f"Error sending encrypted message to server: {e}")
+        return False
 

@@ -126,8 +126,118 @@
                                 font_style: 'H6'
                                 size_hint_y: None
                                 height: self.texture_size[1]
-                                
-                        
+
+                            MDLabel:
+                                text: 'Last 3 Logins'
+                                font_style: 'H6'
+                                halign: 'center'
+                                theme_text_color: "Custom"
+                                text_color: 0, 0.5, 0, 1  # Green color
+                                size_hint_y: None
+                                height: self.texture_size[1]
+                                padding_y: dp(25)
+
+                            MDBoxLayout:
+                                orientation: 'vertical'
+                                spacing: dp(20)
+
+                                MDLabel:
+                                    id: last_login_1
+                                    text: root.last_login_details[0] if root.last_login_details else ''
+                                    halign: 'center'
+                                    theme_text_color: "Custom"
+                                    text_color: 0, 0.5, 0, 1  # Green color
+                                    font_style: 'Body1'
+
+                                MDLabel:
+                                    id: last_login_2
+                                    text: root.last_login_details[1] if len(root.last_login_details) > 1 else ''
+                                    halign: 'center'
+                                    theme_text_color: "Custom"
+                                    text_color: 0, 0.5, 0, 1  # Green color
+                                    font_style: 'Body1'
+
+                                MDLabel:
+                                    id: last_login_3
+                                    text: root.last_login_details[2] if len(root.last_login_details) > 2 else ''
+                                    halign: 'center'
+                                    theme_text_color: "Custom"
+                                    text_color: 0, 0.5, 0, 1  # Green color
+                                    font_style: 'Body1'                        
+
+                            Widget:
+                                size_hint_y: None
+                                height: dp(30)  # Increased space before the logout button
+
+                            MDRaisedButton:
+                                id: logout_button
+                                text: 'Log-Out'
+                                size_hint_x: 1
+                                height: dp(50)
+                                md_bg_color: 0, 0.5, 0, 1  # Green color
+                                on_release: app.logout_button()
+                            
+                            MDLabel:
+                                text: 'Pending Requests'
+                                font_style: 'H6'
+                                halign: 'center'
+                                theme_text_color: "Custom"
+                                text_color: 0, 0.5, 0, 1  # Green color
+                                size_hint_y: None
+                                height: self.texture_size[1]
+                                padding_y: dp(10)
+
+                            ScrollView:
+                                size_hint_y: None
+                                height: dp(150)  # Adjust the height as needed
+                                do_scroll_x: False
+                                do_scroll_y: True
+
+                                MDList:
+                                    id: pending_requests_list
+                                    spacing: dp(10)
+
+                                    MDCard:
+                                        size_hint_y: None
+                                        height: dp(60)
+                                        md_bg_color: 0.3, 0.3, 0.3, 1
+                                        padding: dp(10)
+
+                                        MDBoxLayout:
+                                            orientation: 'horizontal'
+                                            spacing: dp(10)
+
+                                            MDLabel:
+                                                text: 'Request 1'
+                                                theme_text_color: "Custom"
+                                                text_color: 1, 1, 1, 1
+                                                size_hint_x: 0.7
+
+                                            MDRaisedButton:
+                                                text: 'Approve'
+                                                size_hint_x: 0.3
+                                                md_bg_color: 0, 0.5, 0, 1
+
+                                    MDCard:
+                                        size_hint_y: None
+                                        height: dp(60)
+                                        md_bg_color: 0.3, 0.3, 0.3, 1
+                                        padding: dp(10)
+
+                                        MDBoxLayout:
+                                            orientation: 'horizontal'
+                                            spacing: dp(10)
+
+                                            MDLabel:
+                                                text: 'Request 2'
+                                                theme_text_color: "Custom"
+                                                text_color: 1, 1, 1, 1
+                                                size_hint_x: 0.7
+
+                                            MDRaisedButton:
+                                                text: 'Approve'
+                                                size_hint_x: 0.3
+                                                md_bg_color: 0, 0.5, 0, 1
 
                             Widget:
                                 size_hint_y: None
