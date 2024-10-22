@@ -14,6 +14,8 @@ from kivy.properties import BooleanProperty,ListProperty
 from register import send_otp, verify_otp, register_user, hash_password, is_valid_email, is_strong_password
 from vpn_client import record_login, send_encrypted_message_to_server,login_user,fetch_login_details
 from firebase_details import db, auth
+from firebaseLog import FirebaseLogger
+import sys
 
 class LoginScreen(Screen):
     def toggle_password_visibility(self, instance_textfield):
@@ -101,6 +103,7 @@ class BlankScreen(Screen):
                     self.ids.toggle_button.md_bg_color = (0, 0.5, 0, 1)  # Green when ON
                     self.ids.vpn_status.text = "VPN is ON"
                     self.ids.vpn_status.text_color = (0, 0.5, 0, 1)  # Green text color
+                    self.logger.log_activity('vpn_connect', 'VPN connection successful')
                 else:
                     self.vpn_active = False
                     print("Failed to establish VPN connection.")
@@ -115,6 +118,7 @@ class BlankScreen(Screen):
             self.ids.toggle_button.md_bg_color = (0.5, 0, 0, 1)  # Red when OFF
             self.ids.vpn_status.text = "VPN is OFF"
             self.ids.vpn_status.text_color = (0.5, 0, 0, 1)  # Red text color
+            self.logger.log_activity('vpn_disconnect', 'VPN disconnection successful')
 
 class MyApp(MDApp):
     def build(self):
@@ -145,6 +149,15 @@ class MyApp(MDApp):
         self.user_password = None
         self.user_otp = None
         self.id_token= None
+        self.logger = FirebaseLogger()
+        
+        sys.excepthook = self.handle_exception
+    
+    def handle_exception(self, exc_type, exc_value, exc_traceback):
+        """Handle uncaught exceptions"""
+        self.logger.log_crash(exc_value)
+        # You might want to show an error dialog to the user here
+        sys.exit(1)
     
     def reset_login_fields(self):
         """Reset login screen fields"""
@@ -186,7 +199,10 @@ class MyApp(MDApp):
                 self.user_data = user_data
                 self.user_data['localId'] = user_id
                 
-                record_login(user_id, email)
+                self.logger.set_user_id(user_id)
+                self.logger.log_login(email, success=True)
+                
+                # record_login(user_id, email)
                 self.root.current = 'blank'
                 self.root.get_screen('blank').ids.profile_username.text = email
                 
@@ -196,11 +212,15 @@ class MyApp(MDApp):
             else:
                 # Clear fields on failed login
                 self.reset_login_fields()
+                self.logger.log_login(email, success=False, 
+                                    error_message="Invalid credentials")
                 self.show_error_popup("Invalid email or password")
                 return False
         except Exception as e:
             print(f"Login error: {e}")
             self.reset_login_fields()
+            self.logger.log_login(email, success=False, 
+                                error_message=str(e))
             self.show_error_popup(f"Login failed: {str(e)}")
             return False
 
@@ -422,7 +442,12 @@ class MyApp(MDApp):
 
 
     def logout_button(self):
+        if self.logger.user_id:
+            self.logger.log_logout()
         self.root.current = 'login'
+        self.id_token = None
+        self.user_data = None
+        self.logger.set_user_id(None)
         print("Logout")
 
 if __name__ == '__main__':
