@@ -328,6 +328,27 @@ class MyApp(MDApp):
     def set_country(self, country_name, caller):
         caller.text = country_name
         self.country_menu.dismiss()
+    
+    def show_encryption_menu(self, caller):
+        menu_items = [
+            {
+                "viewclass": "OneLineListItem",
+                "text": encryption,
+                "on_release": lambda x=encryption: self.set_encryption(x, caller),
+            } for encryption in ["AES", "RSA", "ChaCha"]
+        ]
+        self.encryption_menu = MDDropdownMenu(
+            caller=caller,
+            items=menu_items,
+            width_mult=4,
+            max_height=Window.height * 0.5,
+            background_color=self.theme_cls.primary_light,
+        )
+        self.encryption_menu.open()
+
+    def set_encryption(self, encryption_name, caller):
+        caller.text = encryption_name
+        self.encryption_menu.dismiss()
 
     def show_organization_menu(self, caller):
         menu_items = [
