@@ -335,7 +335,7 @@ class MyApp(MDApp):
                 "viewclass": "OneLineListItem",
                 "text": encryption,
                 "on_release": lambda x=encryption: self.set_encryption(x, caller),
-            } for encryption in ["AES", "RSA", "ChaCha"]
+            } for encryption in ["AES", "Blowfish", "ChaCha20"]
         ]
         self.encryption_menu = MDDropdownMenu(
             caller=caller,
