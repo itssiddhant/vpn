@@ -50,15 +50,26 @@ def receive_message():
         # Handle missing headers gracefully
         encryption_key_hex = request.headers.get('Encryption-Key')
         encryption_iv_hex = request.headers.get('Encryption-IV')
+        algo = request.headers.get('Encryption-Algorithm', 'AES')  # Defaults to AES if not specified
         
         if not encryption_key_hex or not encryption_iv_hex:
             return jsonify({"status": "error", "message": "Encryption key or IV missing"}), 400
         
-        encryption_key = bytes.fromhex(encryption_key_hex)
-        encryption_iv = bytes.fromhex(encryption_iv_hex)
+        try:
+            encryption_key = bytes.fromhex(encryption_key_hex)
+            encryption_iv = bytes.fromhex(encryption_iv_hex)
+        except ValueError:
+            return jsonify({"status": "error", "message": "Invalid encryption key or IV format"}), 400
         
-        full_encrypted_data = encryption_key + encryption_iv + encrypted_message
-        decrypted_message = decrypt_message(full_encrypted_data).decode()
+        algoCodes = {'AES': b'a', 'Blowfish': b'b', 'ChaCha20': b'c'}
+        if algo not in algoCodes:
+            return jsonify({
+                "status": "error", 
+                "message": f"Unsupported encryption algorithm: {algo}"
+            }), 400
+        
+        full_encrypted_data = algoCodes[algo] + encryption_key + encryption_iv + encrypted_message
+        decrypted_message = decrypt_message(full_encrypted_data)
         
         # Process the decrypted message here
         app.logger.info(f"Received and decrypted message from user {uid}: {decrypted_message}...")  # Log only a preview
