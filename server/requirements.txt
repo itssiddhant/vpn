@@ -1,0 +1,8 @@
+Flask==2.3.2
+pyrebase4==4.6.0
+cryptography==41.0.1
+requests==2.31.0
+pycryptodome==3.18.0
+firebase-admin==6.1.0
+python-dotenv
+mod_wsgi
