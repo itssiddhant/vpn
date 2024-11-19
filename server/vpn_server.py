@@ -16,7 +16,7 @@ limiter.init_app(app)
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
-@app.route('/receive_message', methods=['POST'])
+@app.route('/receive_message', methods=['GET'])
 @limiter.limit("50/minute")  # Adjust rate limit for this endpoint
 def receive_message():
     try:
