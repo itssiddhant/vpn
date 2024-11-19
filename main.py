@@ -12,7 +12,7 @@ from kivymd.uix.button import MDRaisedButton
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivy.properties import BooleanProperty,ListProperty
 from register import send_otp, verify_otp, register_user, hash_password, is_valid_email, is_strong_password
-from vpn_client import record_login, send_encrypted_message_to_server,login_user,fetch_login_details
+from vpn_client import record_login, send_encrypted_message_to_server,login_user,fetch_login_details, open_through_vpn 
 from firebase_details import db, auth
 from firebaseLog import FirebaseLogger
 import sys
@@ -76,13 +76,19 @@ class BlankScreen(Screen):
     vpn_active = BooleanProperty(False)  # Track VPN status
     last_login_details = ListProperty([])
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.logger = None  # Initialize logger as None
+
     def on_pre_enter(self):
+        # Get logger from app when screen is entered
+        self.logger = MDApp.get_running_app().logger
         self.fetch_last_login_details()
 
     def fetch_last_login_details(self):
         app = MDApp.get_running_app()
         user_id = app.user_data['localId'] 
-        login_details = fetch_login_details(user_id) 
+        login_details = fetch_login_details(user_id)    
         if login_details is None:
             login_details = [] 
         
@@ -93,34 +99,47 @@ class BlankScreen(Screen):
         app = MDApp.get_running_app()
 
         if self.vpn_active:
-            # Start VPN connection process
-            message = "VPN connection established"
-
-            # Ensure we have an id_token before proceeding
-            if app.id_token is not None:
-                
-                success = send_encrypted_message_to_server(message, app.id_token, selected_encryption)
-
-                if success:
-                    self.ids.toggle_button.md_bg_color = (0, 0.5, 0, 1)  # Green when ON
-                    self.ids.vpn_status.text = "VPN is ON"
-                    self.ids.vpn_status.text_color = (0, 0.5, 0, 1)  # Green text color
-                    self.logger.log_activity('vpn_connect', 'VPN connection successful')
+            try:
+                message = "VPN connection established"
+                if app.id_token is not None:
+                    success = send_encrypted_message_to_server(message, app.id_token, selected_encryption)
+                    if success:
+                        self.ids.toggle_button.md_bg_color = (0, 0.5, 0, 1)  # Green when ON
+                        self.ids.vpn_status.text = "VPN is ON"
+                        self.ids.vpn_status.text_color = (0, 0.5, 0, 1)  # Green text color
+                        if self.logger:  # Check if logger exists before using
+                            self.logger.log_activity('vpn_connect', 'VPN connection successful')
+                        
+                        # Modify this part to handle the web browser opening in a non-blocking way
+                        from threading import Thread
+                        def open_browser():
+                            open_through_vpn("google.com", app.id_token)
+                        Thread(target=open_browser, daemon=True).start()
+                    else:
+                        self.vpn_active = False
+                        print("Failed to establish VPN connection.")
                 else:
                     self.vpn_active = False
-                    print("Failed to establish VPN connection.")
-            else:
+                    print("id_token is None, cannot toggle VPN")
+            except Exception as e:
+                print(f"Error in VPN toggle: {e}")
                 self.vpn_active = False
-                print("id_token is None, cannot toggle VPN")
+                # Reset UI state on error
+                self.ids.toggle_button.md_bg_color = (0.5, 0, 0, 1)
+                self.ids.vpn_status.text = "VPN is OFF"
+                self.ids.vpn_status.text_color = (0.5, 0, 0, 1)
+                return
         else:
-            # Send disconnection message
-            message = "VPN connection terminated"
-            send_encrypted_message_to_server(message, app.id_token, selected_encryption)
-
-            self.ids.toggle_button.md_bg_color = (0.5, 0, 0, 1)  # Red when OFF
-            self.ids.vpn_status.text = "VPN is OFF"
-            self.ids.vpn_status.text_color = (0.5, 0, 0, 1)  # Red text color
-            self.logger.log_activity('vpn_disconnect', 'VPN disconnection successful')
+            try:
+                message = "VPN connection terminated"
+                send_encrypted_message_to_server(message, app.id_token, selected_encryption)
+                self.ids.toggle_button.md_bg_color = (0.5, 0, 0, 1)  # Red when OFF
+                self.ids.vpn_status.text = "VPN is OFF"
+                self.ids.vpn_status.text_color = (0.5, 0, 0, 1)  # Red text color
+                if self.logger:  # Check if logger exists before using
+                    self.logger.log_activity('vpn_disconnect', 'VPN disconnection successful')
+            except Exception as e:
+                print(f"Error disconnecting VPN: {e}")
 
 class MyApp(MDApp):
     def build(self):
@@ -159,7 +178,7 @@ class MyApp(MDApp):
         """Handle uncaught exceptions"""
         self.logger.log_crash(exc_value)
         # You might want to show an error dialog to the user here
-        sys.exit(1)
+        
     
     def reset_login_fields(self):
         """Reset login screen fields"""

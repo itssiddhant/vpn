@@ -9,6 +9,20 @@ from encdec import encrypt_message, decrypt_message
 import os
 from dotenv import load_dotenv
 load_dotenv()
+import webbrowser
+
+def open_through_vpn(url, id_token):
+    """Opens a website through the VPN server."""
+    try:
+        proxy_url = f"http://192.168.0.165:5000/proxy/{url}"
+        auth_url = f"{proxy_url}?auth_token={id_token}"
+        
+        # Use a new thread to open the browser
+        webbrowser.open_new_tab(auth_url)
+        return True
+    except Exception as e:
+        print(f"Error opening website through VPN: {e}")
+        return False
 
 
 LOGIN_ATTEMPTS = {}
@@ -133,7 +147,7 @@ def send_encrypted_message_to_server(message,id_token, algo='AES'):
         print(f"Toggling VPN with id_token: {id_token}") 
 
         # Send the encrypted message to the server using HTTPS
-        response = requests.post('http://localhost:5000/receive_message', 
+        response = requests.post('http://192.168.0.165:5000/receive_message', 
                                 data=encrypted_message,
                                 headers={'Content-Type': 'application/octet-stream',
                                        'Encryption-Key': key.hex(),

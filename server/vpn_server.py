@@ -16,6 +16,60 @@ limiter.init_app(app)
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
+from flask import Flask, request, jsonify, Response
+import requests
+from urllib.parse import urljoin
+import logging
+
+# Add these new routes to the existing Flask app
+@app.route('/proxy/<path:url>', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@limiter.limit("100/minute")  # Adjust rate limit as needed
+def proxy(url):
+    try:
+        # Verify Firebase ID token
+        id_token = request.headers.get('Authorization')
+        if not id_token or not id_token.startswith("Bearer "):
+            return jsonify({"status": "error", "message": "Invalid or missing authorization token"}), 401
+
+        try:
+            decoded_token = auth.verify_id_token(id_token.split("Bearer ")[1])
+        except Exception as e:
+            return jsonify({"status": "error", "message": f"Token verification failed: {str(e)}"}), 401
+
+        # Forward the request to the target URL
+        target_url = f"http://{url}" if not url.startswith(('http://', 'https://')) else url
+        
+        # Forward the original request headers except host
+        headers = {key: value for key, value in request.headers.items() if key.lower() != 'host'}
+        
+        # Make the request through the server
+        response = requests.request(
+            method=request.method,
+            url=target_url,
+            headers=headers,
+            data=request.get_data(),
+            params=request.args,
+            stream=True
+        )
+        
+        # Create response with original status code and headers
+        proxy_response = Response(
+            response.iter_content(chunk_size=1024),
+            status=response.status_code,
+            content_type=response.headers.get('content-type')
+        )
+        
+        # Forward response headers
+        for key, value in response.headers.items():
+            if key.lower() not in ('content-length', 'transfer-encoding', 'content-encoding'):
+                proxy_response.headers[key] = value
+                
+        return proxy_response
+
+    except Exception as e:
+        app.logger.error(f"Proxy error: {str(e)}")
+        return jsonify({"status": "error", "message": "Proxy request failed"}), 500
+
 @app.route('/receive_message', methods=['POST'])
 @limiter.limit("50/minute")  # Adjust rate limit for this endpoint
 def receive_message():
@@ -115,7 +169,7 @@ def record_login():
         return jsonify({"status": "error", "message": "An error occurred recording the login"}), 400
      
 if __name__ == '__main__':
-    app.run(
+    app.runapp.run(
         host='0.0.0.0',  # Bind to all interfaces
         port=5000,        # Standard HTTPS port
         debug=False      # Disable debug mode in production
