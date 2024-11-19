@@ -115,4 +115,8 @@ def record_login():
         return jsonify({"status": "error", "message": "An error occurred recording the login"}), 400
      
 if __name__ == '__main__':
-    app.run(host='localhost', port=5000)
+    app.run(
+        host='0.0.0.0',  # Bind to all interfaces
+        port=5000,        # Standard HTTPS port
+        debug=False      # Disable debug mode in production
+    )
