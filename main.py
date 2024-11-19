@@ -17,6 +17,8 @@ from firebase_details import db, auth
 from firebaseLog import FirebaseLogger
 import sys
 
+selected_encryption = 'AES' # globally declared
+
 class LoginScreen(Screen):
     def toggle_password_visibility(self, instance_textfield):
         instance_textfield.password = not instance_textfield.password
@@ -97,7 +99,7 @@ class BlankScreen(Screen):
             # Ensure we have an id_token before proceeding
             if app.id_token is not None:
                 
-                success = send_encrypted_message_to_server(message, app.id_token)
+                success = send_encrypted_message_to_server(message, app.id_token, selected_encryption)
 
                 if success:
                     self.ids.toggle_button.md_bg_color = (0, 0.5, 0, 1)  # Green when ON
@@ -113,7 +115,7 @@ class BlankScreen(Screen):
         else:
             # Send disconnection message
             message = "VPN connection terminated"
-            send_encrypted_message_to_server(message, app.id_token)
+            send_encrypted_message_to_server(message, app.id_token, selected_encryption)
 
             self.ids.toggle_button.md_bg_color = (0.5, 0, 0, 1)  # Red when OFF
             self.ids.vpn_status.text = "VPN is OFF"

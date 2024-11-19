@@ -110,18 +110,35 @@ def fetch_login_details(user_id):
         print(f"Error fetching login details: {e}")
         return None
 
-def send_encrypted_message_to_server(message,id_token):
+def send_encrypted_message_to_server(message,id_token, algo='AES'):
     try:
-        encrypted_data = encrypt_message(message.encode())
-        key, iv, encrypted_message = encrypted_data[:24], encrypted_data[24:32], encrypted_data[32:]
+        encrypted_data = encrypt_message(message, algo)
+        algoCode = encrypted_data[0:1].decode()
+
+        if algoCode == 'a':  # AES
+            key = encrypted_data[1:33]
+            iv = encrypted_data[33:49]
+            encrypted_message = encrypted_data[49:]
+        elif algoCode == 'b':  # Blowfish
+            key = encrypted_data[1:57]
+            iv = encrypted_data[57:65]
+            encrypted_message = encrypted_data[65:]
+        elif algoCode == 'c':  # ChaCha20
+            key = encrypted_data[1:33]
+            iv = encrypted_data[33:49]
+            encrypted_message = encrypted_data[49:]
+        else:
+            raise ValueError("Invalid algorithm code")
 
         print(f"Toggling VPN with id_token: {id_token}") 
+
         # Send the encrypted message to the server using HTTPS
         response = requests.post('http://localhost:5000/receive_message', 
                                 data=encrypted_message,
                                 headers={'Content-Type': 'application/octet-stream',
                                        'Encryption-Key': key.hex(),
                                        'Encryption-IV': iv.hex(),
+                                       'Encryption-Algorithm': algo,
                                        'Authorization': f'Bearer {id_token}'})
         
         if response.status_code == 200:

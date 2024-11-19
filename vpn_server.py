@@ -13,12 +13,17 @@ def receive_message():
         encrypted_message = request.data
         encryption_key = bytes.fromhex(request.headers.get('Encryption-Key'))
         encryption_iv = bytes.fromhex(request.headers.get('Encryption-IV'))
+        algo = request.headers.get('Encryption-Algorithm', 'AES')
         
-        if not encryption_key or not encryption_iv:
+        if not all([encrypted_message, encryption_key, encryption_iv]):
             return jsonify({"status": "error", "message": "Encryption key or IV missing"}), 400
         
-        full_encrypted_data = encryption_key + encryption_iv + encrypted_message
-        decrypted_message = decrypt_message(full_encrypted_data).decode()
+        algoCode = {'AES': b'a', 'Blowfish': b'b', 'ChaCha20': b'c'}.get(algo)
+        if not algoCode:
+            return jsonify({"status": "error", "message": f"Unsupported encryption algorithm: {algo}"}), 400
+        
+        full_encrypted_data = algoCode + encryption_key + encryption_iv + encrypted_message
+        decrypted_message = decrypt_message(full_encrypted_data)
         
         # Process the decrypted message here
         print(f"Received and decrypted message: {decrypted_message}")
