@@ -446,6 +446,71 @@ class MyApp(MDApp):
         except Exception as e:
             self.show_error_popup(f"Error resetting password: {e}")
         
+    def download_user_logs(self):
+        if not self.user_data:
+            self.show_error_popup("No user data available")
+            return
+
+        user_id = self.user_data['localId']
+        try:
+            # Fetch all log types from Firebase
+            activity_logs = db.reference(f'users/{user_id}/activity_logs').get() or {}
+            error_logs = db.reference(f'users/{user_id}/error_logs').get() or {}
+            crash_logs = db.reference(f'users/{user_id}/crash_logs').get() or {}
+
+            # Combine and sort logs by timestamp
+            all_logs = []
+            for log_type, logs in [
+                ('Activity', activity_logs), 
+                ('Error', error_logs), 
+                ('Crash', crash_logs)
+            ]:
+                if logs:
+                    for key, log_entry in logs.items():
+                        log_entry['log_type'] = log_type
+                        all_logs.append(log_entry)
+
+            # Sort logs by timestamp
+            all_logs.sort(key=lambda x: x.get('timestamp', ''))
+
+            # Create log file
+            import os
+            from datetime import datetime
+
+            log_filename = f"user_logs_{user_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+            log_filepath = os.path.join(os.path.expanduser('~'), 'Downloads', log_filename)
+
+            with open(log_filepath, 'w') as log_file:
+                log_file.write(f"Comprehensive User Logs\n")
+                log_file.write(f"User ID: {user_id}\n")
+                log_file.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                log_file.write("=" * 50 + "\n\n")
+
+                if all_logs:
+                    for log in all_logs:
+                        log_file.write(f"[{log.get('timestamp_readable', 'N/A')}] ")
+                        log_file.write(f"[{log.get('log_type', 'Unknown')} Log] ")
+                        log_file.write(f"Type: {log.get('type', 'N/A')} - ")
+                        log_file.write(f"Message: {log.get('message', 'N/A')}\n")
+                        
+                        # Add system info if available
+                        if log.get('system_info'):
+                            log_file.write(f"  System: {log['system_info'].get('device', 'N/A')}\n")
+                        
+                        # Add additional data if available
+                        if log.get('additional_data'):
+                            log_file.write(f"  Additional Details: {log['additional_data']}\n")
+                        
+                        log_file.write("\n")
+                else:
+                    log_file.write("No logs found for this user.\n")
+
+            # Show success popup
+            self.show_info_popup(f"Logs downloaded to {log_filename}")
+
+        except Exception as e:
+            self.show_error_popup(f"Error downloading logs: {str(e)}")
+    
     def update_pending_requests(self):
         user_organization = self.user_data['organization']
         pending_requests = db.reference('pending_approvals').child(user_organization).get()

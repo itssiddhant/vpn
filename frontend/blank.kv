@@ -137,7 +137,7 @@
                                     text_color: 0, 0.5, 0, 1  # Green color
                                     size_hint_y: None
                                     height: self.texture_size[1]
-                                    padding_y: dp(15)
+                                    padding_y: dp(10)
 
                                 MDLabel:
                                     id: profile_username
@@ -157,11 +157,11 @@
                                     text_color: 0, 0.5, 0, 1  # Green color
                                     size_hint_y: None
                                     height: self.texture_size[1]
-                                    padding_y: dp(25)
+                                    padding_y: dp(20)
 
                                 MDBoxLayout:
                                     orientation: 'vertical'
-                                    spacing: dp(20)
+                                    spacing: dp(10)
                                     size_hint_y: None
                                     height: self.minimum_height
 
@@ -211,51 +211,16 @@
                                     size_hint_y: None
                                     height: self.minimum_height
 
-                                    MDCard:
-                                        size_hint_y: None
-                                        height: dp(60)
-                                        md_bg_color: 0.3, 0.3, 0.3, 1
-                                        padding: dp(10)
-
-                                        MDBoxLayout:
-                                            orientation: 'horizontal'
-                                            spacing: dp(10)
-
-                                            MDLabel:
-                                                text: 'Request 1'
-                                                theme_text_color: "Custom"
-                                                text_color: 1, 1, 1, 1
-                                                size_hint_x: 0.7
-
-                                            MDRaisedButton:
-                                                text: 'Approve'
-                                                size_hint_x: 0.3
-                                                md_bg_color: 0, 0.5, 0, 1
-
-                                    MDCard:
-                                        size_hint_y: None
-                                        height: dp(60)
-                                        md_bg_color: 0.3, 0.3, 0.3, 1
-                                        padding: dp(10)
-
-                                        MDBoxLayout:
-                                            orientation: 'horizontal'
-                                            spacing: dp(10)
-
-                                            MDLabel:
-                                                text: 'Request 2'
-                                                theme_text_color: "Custom"
-                                                text_color: 1, 1, 1, 1
-                                                size_hint_x: 0.7
-
-                                            MDRaisedButton:
-                                                text: 'Approve'
-                                                size_hint_x: 0.3
-                                                md_bg_color: 0, 0.5, 0, 1
+                                MDRaisedButton:
+                                    text: 'Download Logs'
+                                    size_hint_x: 1
+                                    height: dp(50)
+                                    md_bg_color: 0, 0.5, 0, 1  
+                                    on_release: app.download_user_logs()
 
                                 Widget:
                                     size_hint_y: None
-                                    height: dp(30)  # Increased space before the logout button
+                                    height: dp(20)  # Increased space before the logout button
 
                                 MDRaisedButton:
                                     id: logout_button
