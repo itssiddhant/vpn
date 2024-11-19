@@ -349,6 +349,8 @@ class MyApp(MDApp):
     def set_encryption(self, encryption_name, caller):
         caller.text = encryption_name
         self.encryption_menu.dismiss()
+        selected_encryption = encryption_name  # Store in variable
+        print(f"Selected encryption: {selected_encryption}")  # Print the variable
 
     def show_organization_menu(self, caller):
         menu_items = [
