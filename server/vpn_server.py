@@ -7,6 +7,9 @@ from encdec import decrypt_message
 import platform
 from datetime import datetime
 import logging
+from urllib.parse import urlparse, urljoin
+import requests
+from flask import Response, stream_with_context
 
 app = Flask(__name__)
 
@@ -16,59 +19,109 @@ limiter.init_app(app)
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
-from flask import Flask, request, jsonify, Response
-import requests
-from urllib.parse import urljoin
-import logging
+def validate_url(url):
+    """Validate and normalize the target URL."""
+    try:
+        parsed = urlparse(url)
+        if not parsed.scheme:
+            url = 'https://' + url
+        return url
+    except Exception as e:
+        logging.error(f"URL validation error: {e}")
+        return None
 
 # Add these new routes to the existing Flask app
 @app.route('/proxy/<path:url>', methods=['GET', 'POST', 'PUT', 'DELETE'])
-@limiter.limit("100/minute")  # Adjust rate limit as needed
+@limiter.limit("100/minute")
 def proxy(url):
     try:
-        # Verify Firebase ID token
-        id_token = request.headers.get('Authorization')
-        if not id_token or not id_token.startswith("Bearer "):
-            return jsonify({"status": "error", "message": "Invalid or missing authorization token"}), 401
+        # Get auth token from query parameters
+        auth_token = request.args.get('auth_token')
+        if not auth_token:
+            return jsonify({
+                "status": "error",
+                "message": "Missing auth_token parameter"
+            }), 401
 
         try:
-            decoded_token = auth.verify_id_token(id_token.split("Bearer ")[1])
+            # Verify Firebase token
+            decoded_token = auth.verify_id_token(auth_token)
+            uid = decoded_token['uid']
+            logging.info(f"Authenticated request from user {uid}")
         except Exception as e:
-            return jsonify({"status": "error", "message": f"Token verification failed: {str(e)}"}), 401
+            logging.error(f"Token verification failed: {e}")
+            return jsonify({
+                "status": "error",
+                "message": "Invalid authentication token"
+            }), 401
 
-        # Forward the request to the target URL
-        target_url = f"http://{url}" if not url.startswith(('http://', 'https://')) else url
+        # Validate and normalize the URL
+        target_url = validate_url(url)
+        if not target_url:
+            return jsonify({
+                "status": "error",
+                "message": "Invalid URL"
+            }), 400
+
+        # Prepare headers - forward original headers but remove problematic ones
+        headers = {
+            key: value for key, value in request.headers.items()
+            if key.lower() not in {
+                'host', 'content-length', 'connection', 
+                'authorization', 'content-encoding'
+            }
+        }
         
-        # Forward the original request headers except host
-        headers = {key: value for key, value in request.headers.items() if key.lower() != 'host'}
-        
-        # Make the request through the server
-        response = requests.request(
-            method=request.method,
-            url=target_url,
+        # Add custom headers to identify proxy requests
+        headers.update({
+            'X-Forwarded-For': request.remote_addr,
+            'X-Forwarded-Proto': request.scheme,
+            'X-Forwarded-Host': request.host,
+            'User-Agent': 'Custom-VPN-Proxy/1.0'
+        })
+
+        # Make the proxied request
+        try:
+            resp = requests.request(
+                method=request.method,
+                url=target_url,
+                headers=headers,
+                data=request.get_data(),
+                params={k: v for k, v in request.args.items() if k != 'auth_token'},
+                stream=True,
+                timeout=30,
+                allow_redirects=True,
+                verify=True  # Enable SSL verification
+            )
+        except requests.RequestException as e:
+            logging.error(f"Proxy request failed: {e}")
+            return jsonify({
+                "status": "error",
+                "message": f"Failed to reach target server: {str(e)}"
+            }), 502
+
+        # Create and return streaming response
+        excluded_headers = {
+            'content-encoding', 'content-length', 'transfer-encoding', 'connection'
+        }
+        headers = [
+            (k, v) for k, v in resp.raw.headers.items()
+            if k.lower() not in excluded_headers
+        ]
+
+        return Response(
+            stream_with_context(resp.iter_content(chunk_size=1024)),
+            status=resp.status_code,
             headers=headers,
-            data=request.get_data(),
-            params=request.args,
-            stream=True
+            content_type=resp.headers.get('content-type')
         )
-        
-        # Create response with original status code and headers
-        proxy_response = Response(
-            response.iter_content(chunk_size=1024),
-            status=response.status_code,
-            content_type=response.headers.get('content-type')
-        )
-        
-        # Forward response headers
-        for key, value in response.headers.items():
-            if key.lower() not in ('content-length', 'transfer-encoding', 'content-encoding'):
-                proxy_response.headers[key] = value
-                
-        return proxy_response
 
     except Exception as e:
-        app.logger.error(f"Proxy error: {str(e)}")
-        return jsonify({"status": "error", "message": "Proxy request failed"}), 500
+        logging.error(f"Proxy error: {e}")
+        return jsonify({
+            "status": "error",
+            "message": "Internal proxy error"
+        }), 500
 
 @app.route('/receive_message', methods=['POST'])
 @limiter.limit("50/minute")  # Adjust rate limit for this endpoint
@@ -133,6 +186,26 @@ def receive_message():
         app.logger.error(f"Error in receive_message: {str(e)}")
         return jsonify({"status": "error", "message": "An error occurred processing the message"}), 400
 
+# check VPN status
+@app.route('/vpn/status', methods=['GET'])
+def check_vpn_status():
+    try:
+        auth_token = request.headers.get('Authorization')
+        if not auth_token or not auth_token.startswith("Bearer "):
+            return jsonify({"status": "error", "message": "Invalid token"}), 401
+            
+        decoded_token = auth.verify_id_token(auth_token.split("Bearer ")[1])
+        return jsonify({
+            "status": "success",
+            "connected": True,
+            "user_id": decoded_token['uid']
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+}),500
+
 @app.route('/record_login', methods=['POST'])
 @limiter.limit("20/minute")  # Adjust rate limit for login recording
 def record_login():
@@ -169,7 +242,7 @@ def record_login():
         return jsonify({"status": "error", "message": "An error occurred recording the login"}), 400
      
 if __name__ == '__main__':
-    app.runapp.run(
+    app.run(
         host='0.0.0.0',  # Bind to all interfaces
         port=5000,        # Standard HTTPS port
         debug=False      # Disable debug mode in production

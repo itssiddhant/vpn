@@ -11,13 +11,25 @@ from dotenv import load_dotenv
 load_dotenv()
 import webbrowser
 
-def open_through_vpn(url, id_token):
-    """Opens a website through the VPN server."""
+
+def check_vpn_status(id_token):
     try:
-        proxy_url = f"http://192.168.0.165:5000/proxy/{url}"
+        response = requests.get(
+            'http://192.168.138.33:5000/vpn/status',
+            headers={'Authorization': f'Bearer {id_token}'}
+        )
+        return response.status_code == 200
+    except:
+        return False
+
+def open_through_vpn(url, id_token):
+    try:
+        if not check_vpn_status(id_token):
+            print("VPN not connected")
+            return False
+            
+        proxy_url = f"http://192.168.138.33:5000/proxy/{url}"
         auth_url = f"{proxy_url}?auth_token={id_token}"
-        
-        # Use a new thread to open the browser
         webbrowser.open_new_tab(auth_url)
         return True
     except Exception as e:
@@ -147,7 +159,7 @@ def send_encrypted_message_to_server(message,id_token, algo='AES'):
         print(f"Toggling VPN with id_token: {id_token}") 
 
         # Send the encrypted message to the server using HTTPS
-        response = requests.post('http://192.168.0.165:5000/receive_message', 
+        response = requests.post('http://192.168.138.33:5000/receive_message', 
                                 data=encrypted_message,
                                 headers={'Content-Type': 'application/octet-stream',
                                        'Encryption-Key': key.hex(),

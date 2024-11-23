@@ -177,7 +177,6 @@ class MyApp(MDApp):
     def handle_exception(self, exc_type, exc_value, exc_traceback):
         """Handle uncaught exceptions"""
         self.logger.log_crash(exc_value)
-        # You might want to show an error dialog to the user here
         
     
     def reset_login_fields(self):
@@ -223,7 +222,7 @@ class MyApp(MDApp):
                 self.logger.set_user_id(user_id)
                 self.logger.log_login(email, success=True)
                 
-                # record_login(user_id, email)
+                record_login(user_id, email)
                 self.root.current = 'blank'
                 self.root.get_screen('blank').ids.profile_username.text = email
                 
